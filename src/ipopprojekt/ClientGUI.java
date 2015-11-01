@@ -1,3 +1,5 @@
+package ipopprojekt;
+
 import java.awt.*;
 import java.awt.event.*;
 
@@ -8,14 +10,15 @@ import javax.swing.*;
  */
 public class ClientGUI {
 	private static JFrame frame;
-	private static JTextField inputField;
-	private static JButton sendButton;
 	
 	private static JPanel roomsPanel;
 	private static JRadioButton chatRoom1;
 	private static JRadioButton chatRoom2;
 	private static JRadioButton chatRoom3;
 	private static ButtonGroup chatRooms;
+	
+	private static JTextField inputField;
+	private static JButton sendButton;
 	
 	private static JTextArea chat;
 	private static JScrollPane chatScroll;
@@ -24,11 +27,52 @@ public class ClientGUI {
 	private static int chatRoom = 1;
 	
 	private static void showConnectBox() {
-		inputField.setLocation(5, 8);
+		roomsPanel = new JPanel();
+		roomsPanel.setBounds(5, 8, 320, 50);
+		
+		chatRoom1 = new JRadioButton("Room 1");
+		chatRoom1.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e) {
+				if (chatRoom != 1) {
+					changeChatRoom(1);
+				}
+			}
+		});
+		chatRoom1.setSelected(true);
+		roomsPanel.add(chatRoom1);
+		
+		chatRoom2 = new JRadioButton("Room 2");
+		chatRoom2.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e) {
+				if (chatRoom != 2) {
+					changeChatRoom(2);
+				}
+			}
+		});
+		roomsPanel.add(chatRoom2);
+		
+		chatRoom3 = new JRadioButton("Room 3");
+		chatRoom3.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e) {
+				if (chatRoom != 3) {
+					changeChatRoom(3);
+				}
+			}
+		});
+		roomsPanel.add(chatRoom3);
+		
+		chatRooms = new ButtonGroup();
+		chatRooms.add(chatRoom1);
+		chatRooms.add(chatRoom2);
+		chatRooms.add(chatRoom3);
+		
+		frame.add(roomsPanel);
+		
+		inputField.setLocation(5, 58);
 		frame.add(inputField);
 		
 		sendButton.setText("Connect");
-		sendButton.setLocation(255, 8);
+		sendButton.setLocation(255, 58);
 		sendButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e) {
 				// Connect
@@ -36,6 +80,7 @@ public class ClientGUI {
 				inputField.setText("");
 				
 				sendButton.removeActionListener(this);
+				frame.remove(roomsPanel);
 				
 				showChatClient();
 			}
@@ -47,63 +92,19 @@ public class ClientGUI {
 	}
 	
 	private static void showChatClient() {
-		roomsPanel = new JPanel();
-		roomsPanel.setLayout(new FlowLayout());
-		
-		chatRoom1 = new JRadioButton("Room 1");
-		chatRoom1.setLocation(5, 8);
-		chatRoom1.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e) {
-				if (chatRoom != 1) {
-					changeChatRoom(1);
-				}
-			}
-		});
-		chatRoom1.setSelected(true);
-		
-		chatRoom2 = new JRadioButton("Room 2");
-		chatRoom2.setLocation(5, 70);
-		chatRoom2.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e) {
-				if (chatRoom != 2) {
-					changeChatRoom(2);
-				}
-			}
-		});
-		
-		chatRoom3 = new JRadioButton("Room 3");
-		chatRoom3.setLocation(5, 132);
-		chatRoom3.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e) {
-				if (chatRoom != 3) {
-					changeChatRoom(3);
-				}
-			}
-		});
-		
-		chatRooms = new ButtonGroup();
-		chatRooms.add(chatRoom1);
-		chatRooms.add(chatRoom2);
-		chatRooms.add(chatRoom3);
-		
-		roomsPanel.add(chatRoom1);
-		roomsPanel.add(chatRoom2);
-		roomsPanel.add(chatRoom3);
-		frame.add(roomsPanel);
-		
 		chat = new JTextArea();
 		chat.setLineWrap(true);
 		chat.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		chat.setEditable(false);
 		chatScroll = new JScrollPane(chat, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		chatScroll.setBounds(5, 58, 320, 280);
+		chatScroll.setBounds(5, 8, 320, 280);
 		frame.add(chatScroll);
 		
-		inputField.setLocation(5, 344);
+		inputField.setLocation(5, 294);
 		frame.add(inputField);
 		
 		sendButton.setText("Send");
-		sendButton.setLocation(255, 344);
+		sendButton.setLocation(255, 294);
 		sendButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e) {
 				chat.append(name + ": " + inputField.getText() + "\n");
@@ -119,14 +120,14 @@ public class ClientGUI {
 	}
 	
 	private static void changeChatRoom(int room) {
-		
+		chatRoom = room;
 	}
 	
 	public static void main(String[] args) {
 		frame = new JFrame("P2P Chat");
 		frame.setLayout(null);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setSize(336, 400);
+		frame.setSize(336, 350);
 		frame.setResizable(false);
 		
 		inputField = new JTextField();
