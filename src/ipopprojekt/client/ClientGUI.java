@@ -1,4 +1,4 @@
-package ipopprojekt;
+package ipopprojekt.client;
 
 import java.awt.*;
 import java.awt.event.*;
