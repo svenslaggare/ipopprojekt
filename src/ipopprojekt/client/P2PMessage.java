@@ -1,4 +1,4 @@
-package ipopprojekt;
+package ipopprojekt.client;
 
 /**
  * Represents a P2P message

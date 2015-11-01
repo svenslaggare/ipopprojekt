@@ -1,4 +1,4 @@
-package ipopprojekt;
+package ipopprojekt.client;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -41,7 +41,7 @@ public class P2PSender {
 			public void run() {
 				while (!socket.isClosed()) {
 					try {
-						ChatMessage msg = messageHandler.nextMessage(inputStream);
+						P2PMessage msg = messageHandler.nextMessage(inputStream);
 						
 						if (msg != null) {
 							synchronized (messageReceived) {
@@ -62,8 +62,12 @@ public class P2PSender {
 	 * Sends a message to the given receiver
 	 * @param message
 	 */
-	public void sendMessage(String message) {
-		
+	public void sendMessage(P2PMessage message) {
+		try {
+			this.messageHandler.writeMessage(this.outputStream, message);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	/**

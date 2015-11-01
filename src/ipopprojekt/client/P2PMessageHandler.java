@@ -1,12 +1,9 @@
-package ipopprojekt;
+package ipopprojekt.client;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -15,7 +12,6 @@ import java.util.Set;
 public class P2PMessageHandler {
 	private final int userId;
 	private final Set<ReceivedMessage> receivedMessages = new HashSet<>();
-	private final Map<Integer, String> users = new HashMap<>();
 	private int sequenceNumber = 0;
 	
 	/**
@@ -27,6 +23,13 @@ public class P2PMessageHandler {
 	}
 	
 	/**
+	 * Returns the user id
+	 */
+	public int getUserId() {
+		return this.userId;
+	}
+	
+	/**
 	 * Represents a received message
 	 */
 	private static class ReceivedMessage {
@@ -34,7 +37,7 @@ public class P2PMessageHandler {
 		public final int sequenceNumber;
 		
 		/**
-		 * Creates a new recieved message
+		 * Creates a new received message
 		 */
 		public ReceivedMessage(int senderId, int sequenceNumber) {
 			this.senderId = senderId;
@@ -66,23 +69,6 @@ public class P2PMessageHandler {
 			return true;
 		}
 	}
-
-	/**
-	 * Adds the given user to the list of users
-	 * @param id The id of the user
-	 * @param name The name of the user
-	 */
-	public void addUser(int id, String name) {
-		this.users.put(id, name);
-	}
-	
-	/**
-	 * Removes the user with the given id
-	 * @param id The id of the user
-	 */
-	public void removeUser(int id) {
-		this.users.remove(id);
-	}
 	
 	/**
 	 * Writes the given message to the given stream
@@ -90,13 +76,20 @@ public class P2PMessageHandler {
 	 * @param message The message
 	 */
 	public void writeMessage(DataOutputStream stream, String message) throws IOException {
-		stream.writeInt(this.userId);
-		
 		synchronized (this) {
-			stream.writeInt(this.sequenceNumber++);
+			this.writeMessage(stream, new P2PMessage(this.userId, this.sequenceNumber++, message));
 		}
-		
-		stream.writeUTF(message);
+	}
+	
+	/**
+	 * Writes the given message to the given stream
+	 * @param stream The stream
+	 * @param message The message
+	 */
+	public void writeMessage(DataOutputStream stream, P2PMessage message) throws IOException {
+		stream.writeInt(message.getSenderId());
+		stream.writeInt(message.getSequenceNumber());	
+		stream.writeUTF(message.getMessage());
 		stream.flush();
 	}
 	
@@ -105,23 +98,17 @@ public class P2PMessageHandler {
 	 * @param stream The input stream
 	 * @return The message or null
 	 */
-	public ChatMessage nextMessage(DataInputStream stream) throws IOException {
+	public P2PMessage nextMessage(DataInputStream stream) throws IOException {
 		int senderId = stream.readInt();
 		int sequenceNumber = stream.readInt();
 		String message = stream.readUTF();
 		ReceivedMessage receivedMessage = new ReceivedMessage(senderId, sequenceNumber);
 		
-		//Check if the message has been received
+		//Check if the message has already been received
 		synchronized (this) {
 			if (!this.receivedMessages.contains(receivedMessage)) {
 				this.receivedMessages.add(receivedMessage);
-				
-				if (!this.users.containsKey(senderId)) {
-					return null;
-				}
-				
-				String sender = this.users.get(senderId);
-				return new ChatMessage(LocalDateTime.now(), sender, message);
+				return new P2PMessage(senderId, sequenceNumber, message);
 			} else {
 				return null;
 			}
