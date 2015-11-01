@@ -161,19 +161,6 @@ public class Server implements Runnable {
 		return this.clients;
 	}
 	
-	/**
-	 * Returns the requested client
-	 * @param color The color of the player object
-	 * @return The client or null if the client wasn't found
-	 */
-	public synchronized Client getClient(int id) {
-		if (this.clients.size() < id) {
-			return this.clients.get(id);
-		} else {
-			return null;
-		}
-	}
-	
 	public static void main(String[] args) {
 		Server server = new Server(4711, 30);
 		
