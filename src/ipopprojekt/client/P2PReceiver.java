@@ -8,7 +8,7 @@ import java.net.ServerSocket;
  */
 public class P2PReceiver {
 	private final P2PMessageHandler messageHandler;
-	private final MessageReceived messageReceived;
+	private final P2PMessageReceived messageReceived;
 	private final ServerSocket socket;
 	
 	/**
@@ -17,7 +17,7 @@ public class P2PReceiver {
 	 * @param messageReceived Handles when a message is received
 	 * @param port The port
 	 */
-	public P2PReceiver(P2PMessageHandler messageHandler, MessageReceived messageReceived, int port)
+	public P2PReceiver(P2PMessageHandler messageHandler, P2PMessageReceived messageReceived, int port)
 			throws IOException {
 		this.messageHandler = messageHandler;
 		this.messageReceived = messageReceived;

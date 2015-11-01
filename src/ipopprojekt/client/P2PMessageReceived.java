@@ -1,9 +1,9 @@
 package ipopprojekt.client;
 
 /**
- * Indicates that a message has been received
+ * Indicates that a P2P message has been received
  */
-public interface MessageReceived {
+public interface P2PMessageReceived {
 	/**
 	 * Marks that the given message was received
 	 * @param message The message

@@ -71,14 +71,22 @@ public class P2PMessageHandler {
 	}
 	
 	/**
+	 * Creates a P2P message
+	 * @param message The text message
+	 */
+	public P2PMessage createMessage(String message) {
+		synchronized (this) {
+			return new P2PMessage(this.userId, this.sequenceNumber++, message);
+		}
+	}
+	
+	/**
 	 * Writes the given message to the given stream
 	 * @param stream The stream
 	 * @param message The message
 	 */
 	public void writeMessage(DataOutputStream stream, String message) throws IOException {
-		synchronized (this) {
-			this.writeMessage(stream, new P2PMessage(this.userId, this.sequenceNumber++, message));
-		}
+		this.writeMessage(stream, createMessage(message));
 	}
 	
 	/**

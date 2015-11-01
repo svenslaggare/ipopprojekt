@@ -13,7 +13,7 @@ import java.net.Socket;
  */
 public class P2PSender {
 	private final P2PMessageHandler messageHandler;
-	private final MessageReceived messageReceived;
+	private final P2PMessageReceived messageReceived;
 	private final Socket socket;
 	
 	private final DataInputStream inputStream;
@@ -26,7 +26,7 @@ public class P2PSender {
 	 * @param address The address of the receiver
 	 * @param port The port of the receiver
 	 */
-	public P2PSender(P2PMessageHandler messageHandler, MessageReceived messageReceived,
+	public P2PSender(P2PMessageHandler messageHandler, P2PMessageReceived messageReceived,
 			InetAddress address, int port) throws IOException {
 		this.socket = new Socket(address, port);
 		this.messageHandler = messageHandler;
