@@ -258,7 +258,7 @@ public class Server implements Runnable {
 	 * @param client The client
 	 */
 	public void clientDisconnected(Client client) {
-		this.clients.remove(client);
+//		this.clients.remove(client);		
 		
 //		//Send to other clients that the client disconnected
 //		for (Client other : this.clients) {
@@ -286,6 +286,8 @@ public class Server implements Runnable {
 			this.sendAddNeighbors(this.getClient(changes.getClientId()), toAdd);
 			this.sendRemoveNeighbors(this.getClient(changes.getClientId()), toRemove);
 		}
+		
+		this.clients.remove(client);	
 	}
 	
 	/**

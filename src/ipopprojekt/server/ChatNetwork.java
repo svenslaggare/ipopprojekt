@@ -186,7 +186,7 @@ public class ChatNetwork {
 	 * Indicates if the network is connected
 	 */
 	public boolean isConnected() {
-		if (this.clients.size() == 1) {
+		if (this.clients.size() <= 1) {
 			return true;
 		}
 		
@@ -317,27 +317,29 @@ public class ChatNetwork {
 				changes.put(current.getKey(), new Changes(current.getKey(), clientChanges));
 			}
 		}
-				
-		//After removing the client, its possible that the network becomes unconnected.
-		//So add random connections until the network becomes connected again.	
-		while (!this.isConnected()) {
-			int from = this.randomClientInNetwork();
 			
-			//Check that there is any edge to add
-			if (this.neighborList.get(from).size() < this.clients.size() - 1) {
-				int to = this.randomClient(from, this.neighborList.get(from));
-				addEdge(this.neighborList, from, to);
+		if (this.clients.size() > 0) {
+			//After removing the client, its possible that the network becomes unconnected.
+			//So add random connections until the network becomes connected again.	
+			while (!this.isConnected()) {
+				int from = this.randomClientInNetwork();
 				
-				Changes vertexChanges = null;
-				if (changes.containsKey(from)) {
-					vertexChanges = changes.get(from);
-				} else {
-					Set<Change> clientChanges = new HashSet<>();
-					vertexChanges = new Changes(from, clientChanges);
-					changes.put(from, vertexChanges);
+				//Check that there is any edge to add
+				if (this.neighborList.get(from).size() < this.clients.size() - 1) {
+					int to = this.randomClient(from, this.neighborList.get(from));
+					addEdge(this.neighborList, from, to);
+					
+					Changes vertexChanges = null;
+					if (changes.containsKey(from)) {
+						vertexChanges = changes.get(from);
+					} else {
+						Set<Change> clientChanges = new HashSet<>();
+						vertexChanges = new Changes(from, clientChanges);
+						changes.put(from, vertexChanges);
+					}
+					
+					vertexChanges.changes.add(new Change(to, ChangeType.ADD));		
 				}
-				
-				vertexChanges.changes.add(new Change(to, ChangeType.ADD));		
 			}
 		}
 		
