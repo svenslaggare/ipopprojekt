@@ -7,8 +7,9 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Random;
 
-import ipopproject.messages.MessageID;
+import ipopproject.messages.MessageId;
 
 public class NetworkClient implements Runnable {
 	private String name;
@@ -21,17 +22,33 @@ public class NetworkClient implements Runnable {
 	private DataInputStream streamIn;
 	private DataOutputStream streamOut;
 	
-	public NetworkClient(String name, int chatRoom) {
+	private int p2pPort = -1;
+	private P2PClient p2pClient;
+	private final ChatMessageReceived chatMessageReceived;
+	
+	/**
+	 * Creates a new network client
+	 * @param name The name of the client
+	 * @param chatRoom The room
+	 * @param chatMessageReceived Handles when a message is received
+	 */
+	public NetworkClient(String name, int chatRoom, ChatMessageReceived chatMessageReceived) {
 		this.name = name;
 		this.chatRoom = chatRoom;
-		
+		this.chatMessageReceived = chatMessageReceived;
 		connect("localhost", 4711);
 	}
 	
+	/**
+	 * Returns the name of the client
+	 */
 	public String getName() {
 		return name;
 	}
 	
+	/**
+	 * Returns the chat room
+	 */
 	public int getChatRoom() {
 		return chatRoom;
 	}
@@ -110,13 +127,18 @@ public class NetworkClient implements Runnable {
 			//Handle communication in a separate thread
 			Thread clientThread = new Thread(this);
 			clientThread.start();
-			
-			// TODO: Skicka meddelande om namn till servern
-			this.streamOut.writeByte(MessageID.SET_NAME.getId());
-			this.streamOut.writeUTF(getName());
-			this.streamOut.flush();
-			
+						
 			System.out.println("Connected to server: " + this.serverName + ":" + this.serverPort);	
+			
+			//Choose a random port
+			Random random = new Random();
+			this.p2pPort = 4712 + random.nextInt(10000);
+			
+			//Send it to the server
+			System.out.println("port = " + this.p2pPort);
+			this.streamOut.writeByte(MessageId.SET_CLIENT_P2P_PORT.getId());
+			this.streamOut.writeInt(this.p2pPort);
+			this.streamOut.flush();
 			
 			return true;
 		} catch (UnknownHostException e) {
@@ -144,19 +166,37 @@ public class NetworkClient implements Runnable {
 				//Read the message header
 				byte messageID = streamIn.readByte();
 				
-				switch (MessageID.fromByte(messageID)) {
-				case SEND_LIST:
+				switch (MessageId.fromByte(messageID)) {
+				case ADD_NEIGHBORS:
 					{
-						//List<InetSocketAddress> sendTo = new ArrayList<InetSocketAddress>();
-						
 						int num = streamIn.readInt();
-						
-						System.out.println(num);
-						
-						for (short i = 0; i < num; i++) {
-							System.out.println(streamIn.readInt());
-							System.out.println(new InetSocketAddress(streamIn.readUTF(), streamIn.readInt()));
+						System.out.println("Adding neighbors: ");
+						for (int i = 0; i < num; i++) {
+							int userId = streamIn.readInt();
+							InetSocketAddress userAddress = new InetSocketAddress(
+								streamIn.readUTF(),
+								streamIn.readInt());
+							
+							System.out.println(userId + ": " + userAddress);
+							this.p2pClient.addNeighbor(userId, userAddress);
 						}
+					}
+					break;
+				case REMOVE_NEIGHBORS:
+					{
+						int num = streamIn.readInt();
+						System.out.println("Removing neighbors: ");
+						for (int i = 0; i < num; i++) {
+							int userId = streamIn.readInt();
+							System.out.println(userId);
+						}
+					}
+					break;
+				case SET_USER_ID:
+					{
+						int userId = streamIn.readInt();
+						System.out.println("userId = " + userId);
+						this.p2pClient = new P2PClient(this.p2pPort, userId, this.name, chatMessageReceived);
 					}
 					break;
 				default: break;
@@ -169,17 +209,10 @@ public class NetworkClient implements Runnable {
 	}
 	
 	/**
-	 * Sends an command to the server
-	 * @param command The command to send
-	 * @throws IOException If an IO exception happens
+	 * Sends the given message to the chat
+	 * @param message The message
 	 */
-	/*public void sendCommand(NetworkCommand command) throws IOException {
-		if (this.isConnected()) {
-			byte[] commandData = command.generateCommandBuffer();
-			this.streamOut.writeInt(commandData.length);	//The size command data
-			this.streamOut.writeShort(1);					//The number of commands
-			this.streamOut.write(commandData);				//The command data
-			this.streamOut.flush();							//Send the data
-		}
-	}*/
+	public void sendMessage(String message) {
+		this.p2pClient.send(message);
+	}
 }

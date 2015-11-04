@@ -7,17 +7,17 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-import ipopproject.messages.MessageID;
+import ipopproject.messages.MessageId;
 
 public class Client implements Runnable {
-	private Socket socket;
-	private Server server;
+	private final Socket socket;
+	private final Server server;
 	
-	private int id;
-	private String name;
-	
+	private final int id;
 	private DataInputStream streamIn;
 	private DataOutputStream streamOut;
+	
+	private int port = -1;
 	
 	/**
 	 * Creates an new client
@@ -30,22 +30,30 @@ public class Client implements Runnable {
 		this.id = id;
 	}
 	
-	public int getID() {
+	/**
+	 * Returns the id
+	 */
+	public int getId() {
 		return this.id;
 	}
 	
-	public String getName() {
-		return this.name;
-	}
-	
+	/**
+	 * Returns the IP
+	 */
 	public String getIP() {
 		return this.socket.getInetAddress().getHostAddress();
 	}
 	
+	/**
+	 * Returns the port
+	 */
 	public int getPort() {
-		return this.socket.getPort();
+		return this.port;
 	}
 	
+	/**
+	 * Returns the output stream
+	 */
 	public DataOutputStream getOutputStream() {
 		return this.streamOut;
 	}
@@ -64,14 +72,15 @@ public class Client implements Runnable {
 			try {
 				byte messageID = this.streamIn.readByte();
 				
-				switch (MessageID.fromByte(messageID)) {
-				case SET_NAME:
+				switch (MessageId.fromByte(messageID)) {
+				case SET_CLIENT_P2P_PORT:
 					{
-						String message = this.streamIn.readUTF();
-						this.name = message;
+						this.port = this.streamIn.readInt();
+						this.server.clientConnected(this);
 					}
 					break;
-				default: break;
+				default:
+					break;
 				}
 			} catch (IOException e) {
 				this.server.removeClient(this);
@@ -109,6 +118,6 @@ public class Client implements Runnable {
 	
 	@Override
 	public String toString() {
-		return getID() + ": " + getName();
+		return getId() + "";
 	}
 }

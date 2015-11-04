@@ -1,5 +1,6 @@
 package ipopprojekt.client;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Represents a chat message
@@ -44,6 +45,10 @@ public class ChatMessage {
 	
 	@Override
 	public String toString() {
-		return String.format("%s %s: %s", this.sent.toString(), this.sender, this.message);
+		return String.format(
+			"%s - %s: %s",
+			this.sent.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
+			this.sender,
+			this.message);
 	}
 }

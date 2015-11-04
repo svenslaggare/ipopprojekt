@@ -41,6 +41,7 @@ public class ChatNetwork {
 	 * Represents a change to the network that needs to be performed
 	 */
 	public static class Changes {
+		//TODO: Lägg till typ av change
 		private final int clientId;
 		private final Set<Integer> clients;
 		
@@ -241,5 +242,10 @@ public class ChatNetwork {
 		}
 		
 		return new ArrayList<>(changes.values());
+	}
+	
+	@Override
+	public String toString() {
+		return this.neighborList.toString();
 	}
 }

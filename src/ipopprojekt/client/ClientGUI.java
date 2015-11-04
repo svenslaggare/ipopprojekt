@@ -2,6 +2,7 @@ package ipopprojekt.client;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.time.LocalDateTime;
 
 import javax.swing.*;
 
@@ -61,7 +62,13 @@ public class ClientGUI {
 					chatRoom = 3;
 				}
 				
-				client = new NetworkClient(inputField.getText(), chatRoom);
+				client = new NetworkClient(inputField.getText(), chatRoom, new ChatMessageReceived() {			
+					@Override
+					public void received(ChatMessage message) {
+						chat.append(message + "\n");
+					}
+				});
+				
 				inputField.setText("");
 				
 				sendButton.removeActionListener(this);
@@ -92,8 +99,8 @@ public class ClientGUI {
 		sendButton.setLocation(255, 294);
 		sendButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e) {
-				chat.append(client.getName() + ": " + inputField.getText() + "\n");
-				
+				chat.append(new ChatMessage(LocalDateTime.now(), client.getName(), inputField.getText()).toString() + "\n");	
+				client.sendMessage(inputField.getText());
 				inputField.setText("");
 				inputField.requestFocusInWindow();
 			}

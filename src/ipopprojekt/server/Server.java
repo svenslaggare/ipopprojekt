@@ -4,9 +4,10 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import ipopproject.messages.MessageID;
+import ipopproject.messages.MessageId;
 
 /**
  * The central server that handles all connections
@@ -23,6 +24,10 @@ public class Server implements Runnable {
 	
 	private boolean isRunning = false;
 	
+	/**
+	 * Creates a new server that listens on the given port
+	 * @param port The port
+	 */
 	public Server(int port) {
 		this.port = port;
 	}
@@ -50,7 +55,8 @@ public class Server implements Runnable {
 				Socket clientSocket = this.serverSocket.accept();
 				this.addClient(clientSocket);
 			} catch (IOException e) {
-				//When we close the server, the serverSocket.accept() throws an exception, so ignore this exception if the server isn't running
+				//When we close the server, the serverSocket.accept() throws an exception, 
+				// so ignore this exception if the server isn't running
 				if (this.isRunning) {
 					System.err.println("Server accept error: " + e);
 					this.stop();
@@ -87,7 +93,7 @@ public class Server implements Runnable {
 	/**
 	 * Stops the server
 	 */
-	public synchronized void stop() {
+	public void stop() {
 		if (this.isRunning)	{
 			System.out.println("Server stopped");
 			
@@ -125,15 +131,13 @@ public class Server implements Runnable {
 			Thread clientThread = new Thread(newClient);
 			clientThread.start();
 			
+			//Send the id to the client
+			this.sendClientId(newClient);
+			
 			//Add the client
 			synchronized (this.clients) {
-				this.clients.add(newClient);
-				
+				this.clients.add(newClient);			
 				System.out.println("Client accepted: " + clientSocket.getRemoteSocketAddress());
-				
-				for (Client client : clients) {
-					sendSendList(client);
-				}
 			}
 			
 			if (this.clientConnectionEvent != null) {
@@ -164,10 +168,6 @@ public class Server implements Runnable {
 				
 				this.clients.remove(client);
 				
-				for (Client to : clients) {
-					sendSendList(to);
-				}
-				
 				return true;
 			} else {
 				return false;
@@ -182,45 +182,78 @@ public class Server implements Runnable {
 		return this.clients;
 	}
 	
-	private void sendSendList(Client client) {
+	/**
+	 * Sends the client id to the given client
+	 * @param client The client
+	 */
+	private void sendClientId(Client client) {
 		try {
-			List<Client> sendTo = getSendList(client);
-			
-			if (sendTo.size() > 0) {
-				client.getOutputStream().writeByte(MessageID.SEND_LIST.getId());
+			client.getOutputStream().writeByte(MessageId.SET_USER_ID.getId());
+			client.getOutputStream().writeInt(client.getId());
+			client.getOutputStream().flush();
+		} catch (IOException e) {
+			System.err.println("Could not send client id: " + e);
+		}
+	}
+	
+	/**
+	 * Sends that the given client has connected
+	 * @param newClient The newly connected client
+	 */
+	public void clientConnected(Client newClient) {	
+		//Send first to the newly connected client
+		this.sendAddNeighbors(newClient, this.getAllClients(newClient));
+		
+		//The to the others
+		for (Client client : this.clients) {
+			if (client != newClient) {
+				this.sendAddNeighbors(client, Collections.singletonList(newClient));
+			}
+		}
+	}
+	
+	/**
+	 * Sends what neighbors to add for the given client
+	 * @param client The client
+	 * @param toAdd The clients to add
+	 */
+	private void sendAddNeighbors(Client client, List<Client> toAdd) {
+		try {
+			if (toAdd.size() > 0) {
+				client.getOutputStream().writeByte(MessageId.ADD_NEIGHBORS.getId());		
+				client.getOutputStream().writeInt(toAdd.size());
 				
-				client.getOutputStream().writeInt(sendTo.size());
-				
-				for (Client receiver : sendTo) {
-					client.getOutputStream().writeInt(receiver.getID());
+				for (Client receiver : toAdd) {
+					client.getOutputStream().writeInt(receiver.getId());
 					client.getOutputStream().writeUTF(receiver.getIP());
 					client.getOutputStream().writeInt(receiver.getPort());
 				}
 				
 				client.getOutputStream().flush();
-				
-				System.out.println();
 			}
 		} catch (IOException e) {
 			System.err.println("Could not send sender list: " + e);
 		}
 	}
 	
-	private List<Client> getSendList(Client client) {
-		List<Client> sendList = new ArrayList<Client>();
+	/**
+	 * Returns all clients except the given
+	 * @param client The client
+	 */
+	private List<Client> getAllClients(Client client) {
+		List<Client> clients = new ArrayList<Client>();
 		
-		for (Client receiver : clients) {
-			if (receiver.getID() != client.getID()) {
-				sendList.add(receiver);
+		for (Client receiver : this.clients) {
+			if (receiver.getId() != client.getId()) {
+				clients.add(receiver);
 			}
 		}
 		
-		return sendList;
+		return clients;
 	}
 	
 	public static void main(String[] args) {
 		Server server = new Server(4711);
-		
 		server.start();
 	}
 }
