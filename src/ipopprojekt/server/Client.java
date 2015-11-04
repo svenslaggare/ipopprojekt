@@ -13,7 +13,7 @@ public class Client implements Runnable {
 	private Socket socket;
 	private Server server;
 	
-	private int id = -1;
+	private int id;
 	private String name;
 	
 	private DataInputStream streamIn;
@@ -24,10 +24,10 @@ public class Client implements Runnable {
 	 * @param socket The socket for the client
 	 * @param server The server that the client is associated with
 	 */
-	public Client(Socket socket, Server server) {
+	public Client(Socket socket, Server server, int id) {
 		this.socket = socket;
 		this.server = server;
-		this.id = this.socket.getPort();
+		this.id = id;
 	}
 	
 	public int getID() {
@@ -105,5 +105,10 @@ public class Client implements Runnable {
 		if (this.streamOut != null) {
 			this.streamOut.close();
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return getID() + ": " + getName();
 	}
 }

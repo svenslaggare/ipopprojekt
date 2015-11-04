@@ -7,12 +7,10 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
 
 import ipopproject.messages.MessageID;
 
-public class Client implements Runnable {
+public class NetworkClient implements Runnable {
 	private String name;
 	private int chatRoom;
 	
@@ -23,9 +21,7 @@ public class Client implements Runnable {
 	private DataInputStream streamIn;
 	private DataOutputStream streamOut;
 	
-	private List<InetSocketAddress> sendTo = new ArrayList<InetSocketAddress>();
-	
-	public Client(String name, int chatRoom) {
+	public NetworkClient(String name, int chatRoom) {
 		this.name = name;
 		this.chatRoom = chatRoom;
 		
@@ -111,16 +107,16 @@ public class Client implements Runnable {
 			this.clientSocket = new Socket(this.serverName, this.serverPort);				
 			this.open();
 			
+			//Handle communication in a separate thread
+			Thread clientThread = new Thread(this);
+			clientThread.start();
+			
 			// TODO: Skicka meddelande om namn till servern
 			this.streamOut.writeByte(MessageID.SET_NAME.getId());
 			this.streamOut.writeUTF(getName());
 			this.streamOut.flush();
 			
 			System.out.println("Connected to server: " + this.serverName + ":" + this.serverPort);	
-			
-			//Handle communication in a separate thread
-			Thread clientThread = new Thread(this);
-			clientThread.start();
 			
 			return true;
 		} catch (UnknownHostException e) {
@@ -151,12 +147,15 @@ public class Client implements Runnable {
 				switch (MessageID.fromByte(messageID)) {
 				case SEND_LIST:
 					{
-						short num = streamIn.readShort();
+						//List<InetSocketAddress> sendTo = new ArrayList<InetSocketAddress>();
 						
-						System.out.println("num = " + num);
+						int num = streamIn.readInt();
+						
+						System.out.println(num);
 						
 						for (short i = 0; i < num; i++) {
-							sendTo.add(new InetSocketAddress(streamIn.readUTF(), streamIn.readInt()));
+							System.out.println(streamIn.readInt());
+							System.out.println(new InetSocketAddress(streamIn.readUTF(), streamIn.readInt()));
 						}
 					}
 					break;

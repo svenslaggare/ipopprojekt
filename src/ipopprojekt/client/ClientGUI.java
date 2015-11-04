@@ -23,7 +23,7 @@ public class ClientGUI {
 	private static JTextArea chat;
 	private static JScrollPane chatScroll;
 	
-	private static Client client;
+	private static NetworkClient client;
 	
 	private static void showConnectBox() {
 		roomsPanel = new JPanel();
@@ -61,7 +61,7 @@ public class ClientGUI {
 					chatRoom = 3;
 				}
 				
-				client = new Client(inputField.getText(), chatRoom);
+				client = new NetworkClient(inputField.getText(), chatRoom);
 				inputField.setText("");
 				
 				sendButton.removeActionListener(this);

@@ -17,15 +17,14 @@ public class Server implements Runnable {
 	private ServerSocket serverSocket;
 	
 	private List<Client> clients;
-	private int maxClientCount;
+	private int nextID = 0;
 	
 	private ClientConnectionEvent clientConnectionEvent;
 	
 	private boolean isRunning = false;
 	
-	public Server(int port, int maxClientCount) {
+	public Server(int port) {
 		this.port = port;
-		this.maxClientCount = maxClientCount;
 	}
 
 	/**
@@ -115,19 +114,19 @@ public class Server implements Runnable {
 	 * Adds an new client
 	 * @param clientSocket The socket for the client
 	 */
-	public synchronized void addClient(Socket clientSocket) {
-		if (this.clients.size() < this.maxClientCount) {
-			Client newClient = new Client(clientSocket, this);
+	public void addClient(Socket clientSocket) {
+		Client newClient = new Client(clientSocket, this, nextID++);
+		
+		try	{
+			//Open the IO streams
+			newClient.open();
 			
-			try	{
-				//Open the IO streams
-				newClient.open();
-				
-				//Create the client thread
-				Thread clientThread = new Thread(newClient);
-				clientThread.start();
-				
-				//Add the client
+			//Create the client thread
+			Thread clientThread = new Thread(newClient);
+			clientThread.start();
+			
+			//Add the client
+			synchronized (this.clients) {
 				this.clients.add(newClient);
 				
 				System.out.println("Client accepted: " + clientSocket.getRemoteSocketAddress());
@@ -135,16 +134,14 @@ public class Server implements Runnable {
 				for (Client client : clients) {
 					sendSendList(client);
 				}
-				
-				if (this.clientConnectionEvent != null) {
-					this.clientConnectionEvent.clientConnected(newClient);
-				}
-			} catch(IOException e) {
-				System.err.println("Error opening client: " + e);
-			}	
-		} else {
-			System.out.println("Maximum clients reached (" + this.maxClientCount + ")");
-		}
+			}
+			
+			if (this.clientConnectionEvent != null) {
+				this.clientConnectionEvent.clientConnected(newClient);
+			}
+		} catch(IOException e) {
+			System.err.println("Error opening client: " + e);
+		}	
 	}
 	
 	/**
@@ -152,7 +149,7 @@ public class Server implements Runnable {
 	 * @param client The client
 	 * @return True if the client was removed else false
 	 */
-	public synchronized boolean removeClient(Client client) {
+	public boolean removeClient(Client client) {
 		if (client == null) {
 			return false;
 		}
@@ -182,19 +179,22 @@ public class Server implements Runnable {
 	
 	private void sendSendList(Client client) {
 		try {
-			client.getOutputStream().writeByte(MessageID.SEND_LIST.getId());
-			
 			List<Client> sendTo = getSendList(client);
 			
 			if (sendTo.size() > 0) {
-				client.getOutputStream().writeShort(sendTo.size());
+				client.getOutputStream().writeByte(MessageID.SEND_LIST.getId());
+				
+				client.getOutputStream().writeInt(sendTo.size());
 				
 				for (Client receiver : sendTo) {
+					client.getOutputStream().writeInt(receiver.getID());
 					client.getOutputStream().writeUTF(receiver.getIP());
 					client.getOutputStream().writeInt(receiver.getPort());
 				}
 				
 				client.getOutputStream().flush();
+				
+				System.out.println();
 			}
 		} catch (IOException e) {
 			System.err.println("Could not send sender list: " + e);
@@ -214,7 +214,7 @@ public class Server implements Runnable {
 	}
 	
 	public static void main(String[] args) {
-		Server server = new Server(4711, 30);
+		Server server = new Server(4711);
 		
 		server.start();
 	}
