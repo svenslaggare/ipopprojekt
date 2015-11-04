@@ -47,4 +47,21 @@ public class TestChatNetwork {
 			assertFalse(network.exists(clientId));
 		}
 	}
+	
+	/**
+	 * Tests a sample network
+	 */
+	@Test
+	public void testSampleNetwork() {
+		ChatNetwork network = new ChatNetwork(1, 511);
+		network.addClient(0);
+		assertTrue(network.isConnected());
+		network.addClient(1);
+		assertTrue(network.isConnected());
+		network.addClient(2);
+		assertTrue(network.isConnected());
+				
+		network.removeClient(1);
+		assertTrue(network.isConnected());
+	}
 }

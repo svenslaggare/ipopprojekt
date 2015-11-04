@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.List;
 
 import ipopproject.messages.MessageId;
+import ipopprojekt.server.ChatNetwork.Change;
+import ipopprojekt.server.ChatNetwork.Changes;
 
 /**
  * The central server that handles all connections
@@ -185,6 +187,21 @@ public class Server implements Runnable {
 	}
 	
 	/**
+	 * Returns the client with the given id
+	 * @param id The id of the client
+	 * @return The client or null
+	 */
+	public Client getClient(int id) {
+		for (Client client : this.clients) {
+			if (client.getId() == id) {
+				return client;
+			}
+		}
+		
+		return null;
+	}
+	
+	/**
 	 * Sends the client id to the given client
 	 * @param client The client
 	 */
@@ -203,14 +220,36 @@ public class Server implements Runnable {
 	 * @param newClient The newly connected client
 	 */
 	public void clientConnected(Client newClient) {	
-		//Send first to the newly connected client
-		this.sendAddNeighbors(newClient, this.getAllClients(newClient));
+//		//Send first to the newly connected client
+//		this.sendAddNeighbors(newClient, this.getAllClients(newClient));
+//		
+//		//The to the others
+//		for (Client client : this.clients) {
+//			if (client != newClient) {
+//				this.sendAddNeighbors(client, Collections.singletonList(newClient));
+//			}
+//		}
 		
-		//The to the others
-		for (Client client : this.clients) {
-			if (client != newClient) {
-				this.sendAddNeighbors(client, Collections.singletonList(newClient));
+		//Add the client and distribute the changes
+		for (Changes changes : this.chatNetwork.addClient(newClient.getId())) {
+			List<Client> toAdd = new ArrayList<>();
+			List<Client> toRemove = new ArrayList<>();
+			
+			for (Change change : changes.getChanges()) {
+				switch (change.getType()) {
+				case ADD:
+					toAdd.add(this.getClient(change.getClientId()));
+					break;
+				case REMOVE:
+					toRemove.add(this.getClient(change.getClientId()));
+					break;
+				default:
+					break;
+				}
 			}
+			
+			this.sendAddNeighbors(this.getClient(changes.getClientId()), toAdd);
+			this.sendRemoveNeighbors(this.getClient(changes.getClientId()), toRemove);
 		}
 	}
 	
@@ -221,9 +260,31 @@ public class Server implements Runnable {
 	public void clientDisconnected(Client client) {
 		this.clients.remove(client);
 		
-		//Send to other clients that the client disconnected
-		for (Client other : this.clients) {
-			this.sendRemoveNeighbors(other, Collections.singletonList(client));
+//		//Send to other clients that the client disconnected
+//		for (Client other : this.clients) {
+//			this.sendRemoveNeighbors(other, Collections.singletonList(client));
+//		}
+		
+		//Remove the client and distribute the changes
+		for (Changes changes : this.chatNetwork.removeClient(client.getId())) {
+			List<Client> toAdd = new ArrayList<>();
+			List<Client> toRemove = new ArrayList<>();
+			
+			for (Change change : changes.getChanges()) {
+				switch (change.getType()) {
+				case ADD:
+					toAdd.add(this.getClient(change.getClientId()));
+					break;
+				case REMOVE:
+					toRemove.add(this.getClient(change.getClientId()));
+					break;
+				default:
+					break;
+				}
+			}
+			
+			this.sendAddNeighbors(this.getClient(changes.getClientId()), toAdd);
+			this.sendRemoveNeighbors(this.getClient(changes.getClientId()), toRemove);
 		}
 	}
 	

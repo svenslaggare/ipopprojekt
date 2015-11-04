@@ -16,14 +16,24 @@ public class ChatNetwork {
 	private final Map<Integer, Set<Integer>> neighborList = new HashMap<>();
 	private final int maxNeighborsPerNode;
 	private final List<Integer> clients = new ArrayList<>();
-	private final Random random = new Random();
+	private final Random random;
+	
+	/**
+	 * Creates a new char network
+	 * @param maxNeighborsPerNode The maximum number of neighbors per node
+	 * @param seed The seed to use for generating random neighbors
+	 */
+	public ChatNetwork(int maxNeighborsPerNode, long seed) {
+		this.maxNeighborsPerNode = maxNeighborsPerNode;
+		this.random = new Random(seed);
+	}
 	
 	/**
 	 * Creates a new char network
 	 * @param maxNeighborsPerNode The maximum number of neighbors per node
 	 */
 	public ChatNetwork(int maxNeighborsPerNode) {
-		this.maxNeighborsPerNode = maxNeighborsPerNode;
+		this(maxNeighborsPerNode, System.currentTimeMillis());
 	}
 	
 	/**
@@ -108,16 +118,31 @@ public class ChatNetwork {
 	 */
 	public static class Changes {
 		private final int clientId;
-		private final Set<Change> clients;
+		private final Set<Change> changes;
 		
 		/**
 		 * Creates new changes
 		 * @param clientId The id of the client that need to change
-		 * @param clients The clients that are changed
+		 * @param changes The clients that are changed
 		 */
-		public Changes(int clientId, Set<Change> clients) {
+		public Changes(int clientId, Set<Change> changes) {
 			this.clientId = clientId;
-			this.clients = clients;
+			this.changes = changes;
+		}
+
+		/**
+		 * Returns the client id
+		 */
+		public int getClientId() {
+			return clientId;
+		}
+
+		/**
+		 * Returns the changes
+		 * @return
+		 */
+		public Set<Change> getChanges() {
+			return changes;
 		}
 	}
 			
@@ -144,8 +169,10 @@ public class ChatNetwork {
 	 */
 	private Map<Integer, Set<Integer>> createReverseGraph() {
 		Map<Integer, Set<Integer>> reverseEdges = new HashMap<>();
-		
+				
 		for (Map.Entry<Integer, Set<Integer>> current : neighborList.entrySet()) {
+			reverseEdges.put(current.getKey(), new HashSet<>());
+			
 			int from = current.getKey();
 			for (int to : current.getValue()) {
 				addEdge(reverseEdges, to, from);
@@ -200,8 +227,14 @@ public class ChatNetwork {
 	 * Returns a random client for the given client
 	 * @param clientId The id of the client
 	 * @param neighbors The neighbors of the client
+	 * @return The random client or -1 if there are none
 	 */
 	private int randomClient(int clientId, Set<Integer> neighbors) {
+		//Check that there can be any random clients
+		if (neighbors.size() == this.clients.size() - 1) {
+			return -1;
+		}
+		
 		while (true) {
 			int id = this.clients.get(this.random.nextInt(this.clients.size()));
 			
@@ -284,24 +317,28 @@ public class ChatNetwork {
 				changes.put(current.getKey(), new Changes(current.getKey(), clientChanges));
 			}
 		}
-		
+				
 		//After removing the client, its possible that the network becomes unconnected.
-		//So add random connections until the network becomes connected again.		
+		//So add random connections until the network becomes connected again.	
 		while (!this.isConnected()) {
 			int from = this.randomClientInNetwork();
-			int to = this.randomClient(from, this.neighborList.get(from));
-			addEdge(this.neighborList, from, to);
 			
-			Changes vertexChanges = null;
-			if (changes.containsKey(from)) {
-				vertexChanges = changes.get(from);
-			} else {
-				Set<Change> clientChanges = new HashSet<>();
-				vertexChanges = new Changes(from, clientChanges);
-				changes.put(from, vertexChanges);
+			//Check that there is any edge to add
+			if (this.neighborList.get(from).size() < this.clients.size() - 1) {
+				int to = this.randomClient(from, this.neighborList.get(from));
+				addEdge(this.neighborList, from, to);
+				
+				Changes vertexChanges = null;
+				if (changes.containsKey(from)) {
+					vertexChanges = changes.get(from);
+				} else {
+					Set<Change> clientChanges = new HashSet<>();
+					vertexChanges = new Changes(from, clientChanges);
+					changes.put(from, vertexChanges);
+				}
+				
+				vertexChanges.changes.add(new Change(to, ChangeType.ADD));		
 			}
-			
-			vertexChanges.clients.add(new Change(to, ChangeType.ADD));
 		}
 		
 		return new ArrayList<>(changes.values());
