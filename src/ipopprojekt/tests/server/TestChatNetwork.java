@@ -1,7 +1,12 @@
 package ipopprojekt.tests.server;
 
 import static org.junit.Assert.*;
+
+import java.util.List;
+
 import ipopprojekt.server.ChatNetwork;
+import ipopprojekt.server.ChatNetwork.Changes;
+
 import org.junit.Test;
 
 /**

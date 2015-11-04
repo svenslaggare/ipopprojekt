@@ -189,6 +189,7 @@ public class NetworkClient implements Runnable {
 						for (int i = 0; i < num; i++) {
 							int userId = streamIn.readInt();
 							System.out.println(userId);
+							this.p2pClient.removeNeighbor(userId);
 						}
 					}
 					break;

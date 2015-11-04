@@ -1,6 +1,7 @@
 package ipopprojekt.server;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,19 +39,83 @@ public class ChatNetwork {
 	}
 	
 	/**
+	 * The change types
+	 */
+	public static enum ChangeType {
+		ADD,
+		REMOVE
+	}
+	
+	/**
+	 * Represents a change
+	 */
+	public static class Change {
+		private final int clientId;
+		private final ChangeType type;
+		
+		/**
+		 * Creates a new change
+		 * @param clientId The user affected by the change
+		 * @param type The type
+		 */
+		public Change(int clientId, ChangeType type) {
+			this.clientId = clientId;
+			this.type = type;
+		}
+
+		/**
+		 * Returns the client id
+		 */
+		public int getClientId() {
+			return clientId;
+		}
+
+		/**
+		 * Returns the change type
+		 */
+		public ChangeType getType() {
+			return type;
+		}		
+		
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + clientId;
+			result = prime * result + ((type == null) ? 0 : type.hashCode());
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Change other = (Change) obj;
+			if (clientId != other.clientId)
+				return false;
+			if (type != other.type)
+				return false;
+			return true;
+		}
+	}
+	
+	/**
 	 * Represents a change to the network that needs to be performed
 	 */
 	public static class Changes {
-		//TODO: Lägg till typ av change
 		private final int clientId;
-		private final Set<Integer> clients;
+		private final Set<Change> clients;
 		
 		/**
 		 * Creates new changes
 		 * @param clientId The id of the client that need to change
 		 * @param clients The clients that are changed
 		 */
-		public Changes(int clientId, Set<Integer> clients) {
+		public Changes(int clientId, Set<Change> clients) {
 			this.clientId = clientId;
 			this.clients = clients;
 		}
@@ -153,24 +218,7 @@ public class ChatNetwork {
 	public int randomClientInNetwork() {
 		return this.clients.get(this.random.nextInt(this.clients.size()));
 	}
-	
-	/**
-	 * Creates a set of the given values
-	 * @param first The first value
-	 * @param others The other values
-	 */
-	private Set<Integer> createSet(int first, int... others) {
-		Set<Integer> set = new HashSet<>();
 		
-		set.add(first);
-		
-		for (int x : others) {
-			set.add(x);
-		}
-		
-		return set;
-	}
-	
 	/**
 	 * Adds the given client to the network
 	 * @param clientId The id of the client
@@ -183,13 +231,17 @@ public class ChatNetwork {
 		
 		List<Changes> changes = new ArrayList<>();
 		
-		if (this.clients.size() > 1) {			
+		if (this.clients.size() > 1) {	
+			Set<Change> clientChanges = new HashSet<>();
+			
 			//Start by adding maxNum random nodes for the client
 			for (int i = 0; i < Math.min(this.maxNeighborsPerNode, this.clients.size() - 1); i++) {
-				clientList.add(this.randomClient(clientId, clientList));
+				int rand = this.randomClient(clientId, clientList);
+				clientList.add(rand);
+				clientChanges.add(new Change(rand, ChangeType.ADD));
 			}
 			
-			changes.add(new Changes(clientId, clientList));
+			changes.add(new Changes(clientId, clientChanges));
 			
 			//Then add clients that has the new client as a neighbor
 			Set<Integer> added = new HashSet<>();
@@ -197,7 +249,7 @@ public class ChatNetwork {
 				int rand = this.randomClient(clientId, added);
 				added.add(rand);
 				this.neighborList.get(rand).add(clientId);
-				changes.add(new Changes(rand, createSet(clientId)));
+				changes.add(new Changes(rand, Collections.singleton(new Change(clientId, ChangeType.ADD))));
 			}
 		}
 		
@@ -219,7 +271,9 @@ public class ChatNetwork {
 		//Now all connections to it
 		for (Map.Entry<Integer, Set<Integer>> current : this.neighborList.entrySet()) {
 			if (current.getValue().remove(clientId)) {
-				changes.put(current.getKey(), new Changes(current.getKey(), createSet(clientId)));
+				Set<Change> clientChanges = new HashSet<>();
+				clientChanges.add(new Change(clientId, ChangeType.REMOVE));
+				changes.put(current.getKey(), new Changes(current.getKey(), clientChanges));
 			}
 		}
 		
@@ -234,11 +288,12 @@ public class ChatNetwork {
 			if (changes.containsKey(from)) {
 				vertexChanges = changes.get(from);
 			} else {
-				vertexChanges = new Changes(from, createSet(to));
+				Set<Change> clientChanges = new HashSet<>();
+				vertexChanges = new Changes(from, clientChanges);
 				changes.put(from, vertexChanges);
 			}
 			
-			vertexChanges.clients.add(to);
+			vertexChanges.clients.add(new Change(to, ChangeType.ADD));
 		}
 		
 		return new ArrayList<>(changes.values());

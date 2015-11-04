@@ -166,7 +166,7 @@ public class Server implements Runnable {
 					this.clientConnectionEvent.clientDisconnected(client);
 				}
 				
-				this.clients.remove(client);
+				this.clientDisconnected(client);
 				
 				return true;
 			} else {
@@ -178,7 +178,7 @@ public class Server implements Runnable {
 	/**
 	 * Returns clients connected to the server
 	 */
-	public synchronized List<Client> getClients() {
+	public List<Client> getClients() {
 		return this.clients;
 	}
 	
@@ -197,7 +197,7 @@ public class Server implements Runnable {
 	}
 	
 	/**
-	 * Sends that the given client has connected
+	 * Handles that the given client has connected
 	 * @param newClient The newly connected client
 	 */
 	public void clientConnected(Client newClient) {	
@@ -213,6 +213,19 @@ public class Server implements Runnable {
 	}
 	
 	/**
+	 * Handles that the given client has disconnected
+	 * @param client The client
+	 */
+	public void clientDisconnected(Client client) {
+		this.clients.remove(client);
+		
+		//Send to other clients that the client disconnected
+		for (Client other : this.clients) {
+			this.sendRemoveNeighbors(other, Collections.singletonList(client));
+		}
+	}
+	
+	/**
 	 * Sends what neighbors to add for the given client
 	 * @param client The client
 	 * @param toAdd The clients to add
@@ -221,18 +234,53 @@ public class Server implements Runnable {
 		try {
 			if (toAdd.size() > 0) {
 				client.getOutputStream().writeByte(MessageId.ADD_NEIGHBORS.getId());		
-				client.getOutputStream().writeInt(toAdd.size());
+				this.sendNeighborList(client, toAdd);				
+				client.getOutputStream().flush();
+			}
+		} catch (IOException e) {
+			System.err.println("Could not send addNeighbor " + e);
+		}
+	}
+	
+	/**
+	 * Sends what neighbors to remove for the given client
+	 * @param client The client
+	 * @param toRemove The clients to remove
+	 */
+	private void sendRemoveNeighbors(Client client, List<Client> toRemove) {
+		try {
+			if (toRemove.size() > 0) {
+				client.getOutputStream().writeByte(MessageId.REMOVE_NEIGHBORS.getId());		
 				
-				for (Client receiver : toAdd) {
+				client.getOutputStream().writeInt(toRemove.size());
+				for (Client receiver : toRemove) {
 					client.getOutputStream().writeInt(receiver.getId());
-					client.getOutputStream().writeUTF(receiver.getIP());
-					client.getOutputStream().writeInt(receiver.getPort());
 				}
 				
 				client.getOutputStream().flush();
 			}
 		} catch (IOException e) {
-			System.err.println("Could not send sender list: " + e);
+			System.err.println("Could not send addNeighbor " + e);
+		}
+	}
+	
+	/**
+	 * Sends the given neighbor list to the given client.
+	 * Note that this method does not set the type of the message.
+	 * @param client The client
+	 * @param neighborList The neighbor list
+	 */
+	private void sendNeighborList(Client client, List<Client> neighborList) {
+		try {
+			client.getOutputStream().writeInt(neighborList.size());
+			
+			for (Client receiver : neighborList) {
+				client.getOutputStream().writeInt(receiver.getId());
+				client.getOutputStream().writeUTF(receiver.getIP());
+				client.getOutputStream().writeInt(receiver.getPort());
+			}
+		} catch (IOException e) {
+			System.err.println("Could not send neighbor list: " + e);
 		}
 	}
 	
