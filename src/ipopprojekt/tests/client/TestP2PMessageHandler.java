@@ -8,7 +8,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import ipopprojekt.client.ChatMessage;
 import ipopprojekt.client.P2PMessage;
 import ipopprojekt.client.P2PMessageHandler;
 
@@ -31,8 +30,8 @@ public class TestP2PMessageHandler {
 	 */
 	@Test
 	public void testSendAndRead() {
-		P2PMessageHandler senderHandler = new P2PMessageHandler(1);
-		P2PMessageHandler recieverHandler = new P2PMessageHandler(2);
+		P2PMessageHandler senderHandler = new P2PMessageHandler(1, "Client 1");
+		P2PMessageHandler recieverHandler = new P2PMessageHandler(2, "Client 2");
 		
 		ByteArrayOutputStream backingStream = new ByteArrayOutputStream();
 		
@@ -76,9 +75,9 @@ public class TestP2PMessageHandler {
 	 */
 	@Test
 	public void testReadReceivedMessage() {
-		P2PMessageHandler senderHandler = new P2PMessageHandler(1);
-		P2PMessageHandler senderHandler2 = new P2PMessageHandler(1);
-		P2PMessageHandler recieverHandler = new P2PMessageHandler(2);
+		P2PMessageHandler senderHandler = new P2PMessageHandler(1, "Client 1");
+		P2PMessageHandler senderHandler2 = new P2PMessageHandler(1, "Client 1");
+		P2PMessageHandler recieverHandler = new P2PMessageHandler(2, "Client 2");
 		
 		ByteArrayOutputStream backingStream = new ByteArrayOutputStream();
 		

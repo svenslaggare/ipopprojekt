@@ -11,15 +11,18 @@ import java.util.Set;
  */
 public class P2PMessageHandler {
 	private final int userId;
+	private final String name;
 	private final Set<ReceivedMessage> receivedMessages = new HashSet<>();
 	private int sequenceNumber = 0;
 	
 	/**
 	 * Creates a new message handler
 	 * @param userId The id of the user
+	 * @param name The name of the user
 	 */
-	public P2PMessageHandler(int userId) {
+	public P2PMessageHandler(int userId, String name) {
 		this.userId = userId;
+		this.name = name;
 	}
 	
 	/**
@@ -76,7 +79,7 @@ public class P2PMessageHandler {
 	 */
 	public P2PMessage createMessage(String message) {
 		synchronized (this) {
-			return new P2PMessage(this.userId, this.sequenceNumber++, message);
+			return new P2PMessage(this.userId, this.sequenceNumber++, this.name, message);
 		}
 	}
 	
@@ -97,6 +100,7 @@ public class P2PMessageHandler {
 	public void writeMessage(DataOutputStream stream, P2PMessage message) throws IOException {
 		stream.writeInt(message.getSenderId());
 		stream.writeInt(message.getSequenceNumber());	
+		stream.writeUTF(message.getSenderName());
 		stream.writeUTF(message.getMessage());
 		stream.flush();
 	}
@@ -109,6 +113,7 @@ public class P2PMessageHandler {
 	public P2PMessage nextMessage(DataInputStream stream) throws IOException {
 		int senderId = stream.readInt();
 		int sequenceNumber = stream.readInt();
+		String senderName = stream.readUTF();
 		String message = stream.readUTF();
 		ReceivedMessage receivedMessage = new ReceivedMessage(senderId, sequenceNumber);
 		
@@ -116,7 +121,7 @@ public class P2PMessageHandler {
 		synchronized (this) {
 			if (!this.receivedMessages.contains(receivedMessage)) {
 				this.receivedMessages.add(receivedMessage);
-				return new P2PMessage(senderId, sequenceNumber, message);
+				return new P2PMessage(senderId, sequenceNumber, senderName, message);
 			} else {
 				return null;
 			}

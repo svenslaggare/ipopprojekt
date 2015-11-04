@@ -9,9 +9,9 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 /**
- * Represents a P2P sender
+ * Represents a P2P message client
  */
-public class P2PSender {
+public class P2PMessageClient {
 	private final P2PMessageHandler messageHandler;
 	private final P2PMessageReceived messageReceived;
 	private final Socket socket;
@@ -20,13 +20,13 @@ public class P2PSender {
 	private final DataOutputStream outputStream;
 	
 	/**
-	 * Creates a new P2P sender that connects to the given receiver
+	 * Creates a new P2P message client that connects to the given message server
 	 * @param messageHandler The message handler
 	 * @param messageReceived Handles when a message is received
-	 * @param address The address of the receiver
-	 * @param port The port of the receiver
+	 * @param address The address of the message server
+	 * @param port The port of the message server
 	 */
-	public P2PSender(P2PMessageHandler messageHandler, P2PMessageReceived messageReceived,
+	public P2PMessageClient(P2PMessageHandler messageHandler, P2PMessageReceived messageReceived,
 			InetAddress address, int port) throws IOException {
 		this.socket = new Socket(address, port);
 		this.messageHandler = messageHandler;
@@ -59,8 +59,8 @@ public class P2PSender {
 	}
 
 	/**
-	 * Sends a message to the given receiver
-	 * @param message
+	 * Sends a message to the server
+	 * @param message The message to send
 	 */
 	public void sendMessage(P2PMessage message) {
 		try {
@@ -78,7 +78,7 @@ public class P2PSender {
 	}
 	
 	/**
-	 * Closes the connection to the receiver
+	 * Closes the connection to the server
 	 */
 	public void close() {
 		try {
