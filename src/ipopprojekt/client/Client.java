@@ -6,6 +6,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+
+import ipopprojekt.server.MessageID;
 
 public class Client implements Runnable {
 	private String name;
@@ -104,6 +107,8 @@ public class Client implements Runnable {
 			this.open();
 			
 			// TODO: Skicka meddelande om namn till servern
+			this.streamOut.writeByte(MessageID.SET_NAME.getId());
+			this.streamOut.writeUTF(getName());
 			
 			System.out.println("Connected to server: " + this.serverName + ":" + this.serverPort);	
 			
@@ -131,33 +136,33 @@ public class Client implements Runnable {
 
 	@Override
 	public void run() {
-		/*while (this.isConnected()) {
+		while (this.isConnected()) {
 			//Handle commands
 			try {
 				//Read the message header
 				int commandSize = this.streamIn.readInt();
-				short numberOfCommands = this.streamIn.readShort();
+//				short numberOfCommands = this.streamIn.readShort();
 				
 				//Read the command buffer
-				byte[] commandData = new byte[commandSize];				
-				this.streamIn.read(commandData, 0, commandSize);
-				ByteBuffer commandBuffer = ByteBuffer.wrap(commandData);
+//				byte[] commandData = new byte[commandSize];				
+//				this.streamIn.read(commandData, 0, commandSize);
+//				ByteBuffer commandBuffer = ByteBuffer.wrap(commandData);
 				
 				//Enqueue the commands
-				for (short i = 0; i < numberOfCommands; i++) {
-					NetworkCommand command = NetworkCommand.readCommandFromBuffer(commandBuffer);
-					this.networkCommandManager.enqueueCommand(command);
-				}
+//				for (short i = 0; i < numberOfCommands; i++) {
+//					NetworkCommand command = NetworkCommand.readCommandFromBuffer(commandBuffer);
+//					this.networkCommandManager.enqueueCommand(command);
+//				}
 				
 				//Execute the commands if the commands isn't batched
-				if (!this.batchCommands) {
-					this.networkCommandManager.executeCommandBuffer();
-				}
+//				if (!this.batchCommands) {
+//					this.networkCommandManager.executeCommandBuffer();
+//				}
 			} catch (IOException e) {
 				this.disconnect();
 				break;
 			}
-		}*/
+		}
 	}
 	
 	/**

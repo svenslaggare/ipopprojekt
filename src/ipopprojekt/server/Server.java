@@ -47,7 +47,7 @@ public class Server implements Runnable {
 			try	{
 				// Waits for an client to connect
 				Socket clientSocket = this.serverSocket.accept();
-				this.addClient(clientSocket);			
+				this.addClient(clientSocket);
 			} catch (IOException e) {
 				//When we close the server, the serverSocket.accept() throws an exception, so ignore this exception if the server isn't running
 				if (this.isRunning) {
@@ -64,16 +64,21 @@ public class Server implements Runnable {
 	public void start() {
 		if (!this.isRunning) {
 			try	{
+				this.clients = new ArrayList<Client>();
+				
+				System.out.println("Starting server at port: " + port + "...");
+				
 				this.serverSocket = new ServerSocket(this.port);
 				
-				this.clients = new ArrayList<Client>();
+				System.out.println("Server started: " + this.serverSocket.getLocalSocketAddress());
+				System.out.println("Waiting for clients...");
 				
 				Thread clientConnectionThread = new Thread(this);
 				clientConnectionThread.start();
 				
 				this.isRunning = true;
 			} catch (IOException e) {
-				System.err.println(e);
+				System.err.println("Server start error: " + e);
 			}
 		}
 	}
@@ -83,6 +88,8 @@ public class Server implements Runnable {
 	 */
 	public synchronized void stop() {
 		if (this.isRunning)	{
+			System.out.println("Server stopped");
+			
 			this.isRunning = false;
 			
 			try {
@@ -121,12 +128,16 @@ public class Server implements Runnable {
 				//Add the client
 				this.clients.add(newClient);
 				
+				System.out.println("Client accepted: " + clientSocket.getRemoteSocketAddress());
+				
 				if (this.clientConnectionEvent != null) {
 					this.clientConnectionEvent.clientConnected(newClient);
 				}
 			} catch(IOException e) {
 				System.err.println("Error opening client: " + e);
 			}	
+		} else {
+			System.out.println("Maximum clients reached (" + this.maxClientCount + ")");
 		}
 	}
 	
@@ -142,6 +153,8 @@ public class Server implements Runnable {
 		
 		synchronized (this.clients) {
 			if (this.clients.contains(client)) {
+				System.out.println("Client: '" + client.toString() + "' removed");
+				
 				if (this.clientConnectionEvent != null) {				
 					this.clientConnectionEvent.clientDisconnected(client);
 				}
