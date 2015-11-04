@@ -132,7 +132,9 @@ public class Server implements Runnable {
 				
 				System.out.println("Client accepted: " + clientSocket.getRemoteSocketAddress());
 				
-				sendSendList(newClient);
+				for (Client client : clients) {
+					sendSendList(client);
+				}
 				
 				if (this.clientConnectionEvent != null) {
 					this.clientConnectionEvent.clientConnected(newClient);
