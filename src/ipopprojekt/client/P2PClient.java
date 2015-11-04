@@ -38,6 +38,7 @@ public class P2PClient implements P2PMessageReceived {
 		this.clientSocket = new DatagramSocket(port);
 		this.chatMessageReceived = chatMessageReceived;
 		
+		//Listen for incoming messages
 		Thread receiveThread = new Thread(new Runnable() {		
 			@Override
 			public void run() {
@@ -136,7 +137,7 @@ public class P2PClient implements P2PMessageReceived {
 	 */
 	@Override
 	public void received(P2PMessage message) {
-		//To avoid displaying own message
+		//To avoid displaying own messages
 		if (message.getSenderId() == this.messageHandler.getUserId()) {
 			return;
 		}
@@ -146,8 +147,10 @@ public class P2PClient implements P2PMessageReceived {
 			synchronized (this.users) {
 				if (this.users.containsKey(message.getSenderId())) {
 					String sender = this.users.get(message.getSenderId());
-					this.chatMessageReceived.received(
-							new ChatMessage(LocalDateTime.now(), sender, message.getMessage()));
+					this.chatMessageReceived.received(new ChatMessage(
+						LocalDateTime.now(),
+						sender,
+						message.getMessage()));
 				} else {
 					System.err.println("Received message from unknown sender (" + message.getSenderId() + ").");
 				}

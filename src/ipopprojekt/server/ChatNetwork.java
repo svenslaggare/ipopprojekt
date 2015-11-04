@@ -16,7 +16,7 @@ public class ChatNetwork {
 	private final Map<Integer, Set<Integer>> neighborList = new HashMap<>();
 	private final int maxNeighborsPerNode;
 	private final List<Integer> clients = new ArrayList<>();
-	private final Random random = new Random(1337);
+	private final Random random = new Random();
 	
 	/**
 	 * Creates a new char network
