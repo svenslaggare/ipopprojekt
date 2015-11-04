@@ -1,4 +1,4 @@
-package ipopprojekt;
+package ipopprojekt.client;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -23,42 +23,20 @@ public class ClientGUI {
 	private static JTextArea chat;
 	private static JScrollPane chatScroll;
 	
-	private static String name;
-	private static int chatRoom = 1;
+	private static Client client;
 	
 	private static void showConnectBox() {
 		roomsPanel = new JPanel();
 		roomsPanel.setBounds(5, 8, 320, 50);
 		
 		chatRoom1 = new JRadioButton("Room 1");
-		chatRoom1.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e) {
-				if (chatRoom != 1) {
-					changeChatRoom(1);
-				}
-			}
-		});
 		chatRoom1.setSelected(true);
 		roomsPanel.add(chatRoom1);
 		
 		chatRoom2 = new JRadioButton("Room 2");
-		chatRoom2.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e) {
-				if (chatRoom != 2) {
-					changeChatRoom(2);
-				}
-			}
-		});
 		roomsPanel.add(chatRoom2);
 		
 		chatRoom3 = new JRadioButton("Room 3");
-		chatRoom3.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e) {
-				if (chatRoom != 3) {
-					changeChatRoom(3);
-				}
-			}
-		});
 		roomsPanel.add(chatRoom3);
 		
 		chatRooms = new ButtonGroup();
@@ -76,7 +54,14 @@ public class ClientGUI {
 		sendButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e) {
 				// Connect
-				name = inputField.getText();
+				int chatRoom = 1;
+				if (chatRoom2.isSelected()) {
+					chatRoom = 2;
+				} else if (chatRoom3.isSelected()) {
+					chatRoom = 3;
+				}
+				
+				client = new Client(inputField.getText(), chatRoom);
 				inputField.setText("");
 				
 				sendButton.removeActionListener(this);
@@ -107,7 +92,7 @@ public class ClientGUI {
 		sendButton.setLocation(255, 294);
 		sendButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e) {
-				chat.append(name + ": " + inputField.getText() + "\n");
+				chat.append(client.getName() + ": " + inputField.getText() + "\n");
 				
 				inputField.setText("");
 				inputField.requestFocusInWindow();
@@ -117,10 +102,6 @@ public class ClientGUI {
 		
 		frame.getRootPane().setDefaultButton(sendButton);
 		inputField.requestFocusInWindow();
-	}
-	
-	private static void changeChatRoom(int room) {
-		chatRoom = room;
 	}
 	
 	public static void main(String[] args) {
