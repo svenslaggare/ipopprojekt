@@ -5,10 +5,12 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
-import ipopprojekt.server.MessageID;
+import ipopproject.messages.MessageID;
 
 public class Client implements Runnable {
 	private String name;
@@ -20,6 +22,8 @@ public class Client implements Runnable {
 	private Socket clientSocket;
 	private DataInputStream streamIn;
 	private DataOutputStream streamOut;
+	
+	private List<InetSocketAddress> sendTo = new ArrayList<InetSocketAddress>();
 	
 	public Client(String name, int chatRoom) {
 		this.name = name;
@@ -86,8 +90,8 @@ public class Client implements Runnable {
 			if (this.clientSocket != null) {
 				this.clientSocket.close();
 			}
-		} catch (IOException ioe) {
-			
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -102,6 +106,7 @@ public class Client implements Runnable {
 		this.serverPort = serverPort;
 		
 		System.out.println("Connecting to server...");
+		
 		try {
 			this.clientSocket = new Socket(this.serverName, this.serverPort);				
 			this.open();
@@ -109,6 +114,7 @@ public class Client implements Runnable {
 			// TODO: Skicka meddelande om namn till servern
 			this.streamOut.writeByte(MessageID.SET_NAME.getId());
 			this.streamOut.writeUTF(getName());
+			this.streamOut.flush();
 			
 			System.out.println("Connected to server: " + this.serverName + ":" + this.serverPort);	
 			
@@ -140,24 +146,22 @@ public class Client implements Runnable {
 			//Handle commands
 			try {
 				//Read the message header
-				int commandSize = this.streamIn.readInt();
-//				short numberOfCommands = this.streamIn.readShort();
+				byte messageID = streamIn.readByte();
 				
-				//Read the command buffer
-//				byte[] commandData = new byte[commandSize];				
-//				this.streamIn.read(commandData, 0, commandSize);
-//				ByteBuffer commandBuffer = ByteBuffer.wrap(commandData);
-				
-				//Enqueue the commands
-//				for (short i = 0; i < numberOfCommands; i++) {
-//					NetworkCommand command = NetworkCommand.readCommandFromBuffer(commandBuffer);
-//					this.networkCommandManager.enqueueCommand(command);
-//				}
-				
-				//Execute the commands if the commands isn't batched
-//				if (!this.batchCommands) {
-//					this.networkCommandManager.executeCommandBuffer();
-//				}
+				switch (MessageID.fromByte(messageID)) {
+				case SEND_LIST:
+					{
+						short num = streamIn.readShort();
+						
+						System.out.println("num = " + num);
+						
+						for (short i = 0; i < num; i++) {
+							sendTo.add(new InetSocketAddress(streamIn.readUTF(), streamIn.readInt()));
+						}
+					}
+					break;
+				default: break;
+				}
 			} catch (IOException e) {
 				this.disconnect();
 				break;

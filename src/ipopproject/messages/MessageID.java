@@ -1,8 +1,8 @@
-package ipopprojekt.server;
+package ipopproject.messages;
 
 public enum MessageID {
 	SET_NAME((byte)0),
-	GET_LIST((byte)1);
+	SEND_LIST((byte)1);
 	
 	private final byte id;
 	
@@ -17,7 +17,7 @@ public enum MessageID {
 	public static MessageID fromByte(byte id) {
 		switch (id) {
 		case 0: return SET_NAME;
-		case 1: return GET_LIST;
+		case 1: return SEND_LIST;
 		}
 		
 		return null;

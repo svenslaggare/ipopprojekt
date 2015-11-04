@@ -7,9 +7,12 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
+import ipopproject.messages.MessageID;
+
 public class Client implements Runnable {
 	private Socket socket;
 	private Server server;
+	
 	private int id = -1;
 	private String name;
 	
@@ -35,6 +38,18 @@ public class Client implements Runnable {
 		return this.name;
 	}
 	
+	public String getIP() {
+		return this.socket.getInetAddress().getHostAddress();
+	}
+	
+	public int getPort() {
+		return this.socket.getPort();
+	}
+	
+	public DataOutputStream getOutputStream() {
+		return this.streamOut;
+	}
+	
 	/**
 	 * Indicates if the client is connected
 	 */
@@ -56,11 +71,7 @@ public class Client implements Runnable {
 						this.name = message;
 					}
 					break;
-				case GET_LIST:
-					{
-						
-					}
-					break;
+				default: break;
 				}
 			} catch (IOException e) {
 				this.server.removeClient(this);

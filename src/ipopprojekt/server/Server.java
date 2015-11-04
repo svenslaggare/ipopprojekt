@@ -6,6 +6,8 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import ipopproject.messages.MessageID;
+
 /**
  * The central server that handles all connections
  * and delegate to whom each client shall send messages.
@@ -130,6 +132,8 @@ public class Server implements Runnable {
 				
 				System.out.println("Client accepted: " + clientSocket.getRemoteSocketAddress());
 				
+				sendSendList(newClient);
+				
 				if (this.clientConnectionEvent != null) {
 					this.clientConnectionEvent.clientConnected(newClient);
 				}
@@ -172,6 +176,39 @@ public class Server implements Runnable {
 	 */
 	public synchronized List<Client> getClients() {
 		return this.clients;
+	}
+	
+	private void sendSendList(Client client) {
+		try {
+			client.getOutputStream().writeByte(MessageID.SEND_LIST.getId());
+			
+			List<Client> sendTo = getSendList(client);
+			
+			if (sendTo.size() > 0) {
+				client.getOutputStream().writeShort(sendTo.size());
+				
+				for (Client receiver : sendTo) {
+					client.getOutputStream().writeUTF(receiver.getIP());
+					client.getOutputStream().writeInt(receiver.getPort());
+				}
+				
+				client.getOutputStream().flush();
+			}
+		} catch (IOException e) {
+			System.err.println("Could not send sender list: " + e);
+		}
+	}
+	
+	private List<Client> getSendList(Client client) {
+		List<Client> sendList = new ArrayList<Client>();
+		
+		for (Client receiver : clients) {
+			if (receiver.getID() != client.getID()) {
+				sendList.add(receiver);
+			}
+		}
+		
+		return sendList;
 	}
 	
 	public static void main(String[] args) {
