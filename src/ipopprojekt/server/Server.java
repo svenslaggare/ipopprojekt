@@ -163,6 +163,11 @@ public class Server implements Runnable {
 				}
 				
 				this.clients.remove(client);
+				
+				for (Client to : clients) {
+					sendSendList(to);
+				}
+				
 				return true;
 			} else {
 				return false;
