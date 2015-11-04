@@ -114,15 +114,6 @@ public class ChatNetwork {
 	}
 	
 	/**
-	 * Returns the components in the graph
-	 */
-	private Set<Set<Integer>> getComponents() {
-		Set<Set<Integer>> components = new HashSet<>();
-		
-		return components;
-	}
-	
-	/**
 	 * Visits the neighbors of the current node using DFS
 	 * @param graph The current graph
 	 * @param visited The already visited
@@ -233,9 +224,7 @@ public class ChatNetwork {
 		}
 		
 		//After removing the client, its possible that the network becomes unconnected.
-		//So add random connections until the network becomes connected again.
-		int added = 0;
-		
+		//So add random connections until the network becomes connected again.		
 		while (!this.isConnected()) {
 			int from = this.randomClientInNetwork();
 			int to = this.randomClient(from, this.neighborList.get(from));
@@ -250,11 +239,6 @@ public class ChatNetwork {
 			}
 			
 			vertexChanges.clients.add(to);
-			added++;
-		}
-		
-		if (added > 0) {
-			System.out.println("Added edges " + added + " to make graph connected again.");
 		}
 		
 		return new ArrayList<>(changes.values());
