@@ -6,17 +6,20 @@ package ipopprojekt.client;
 public class P2PMessage {
 	private final int senderId;
 	private final int sequenceNumber;
+	private final String senderName;
 	private final String message;
 	
 	/**
 	 * Creates a new P2P message
 	 * @param senderId The sender id
 	 * @param sequenceNumber The sequence number
+	 * @param senderName The name of the sender
 	 * @param message The message
 	 */
-	public P2PMessage(int senderId, int sequenceNumber, String message) {
+	public P2PMessage(int senderId, int sequenceNumber, String senderName, String message) {
 		this.senderId = senderId;
 		this.sequenceNumber = sequenceNumber;
+		this.senderName = senderName;
 		this.message = message;
 	}
 
@@ -33,6 +36,13 @@ public class P2PMessage {
 	public int getSequenceNumber() {
 		return sequenceNumber;
 	}
+	
+	/**
+	 * Returns the name of the sender
+	 */
+	public String getSenderName() {
+		return senderName;
+	}
 
 	/**
 	 * Returns the message
@@ -47,6 +57,8 @@ public class P2PMessage {
 		int result = 1;
 		result = prime * result + ((message == null) ? 0 : message.hashCode());
 		result = prime * result + senderId;
+		result = prime * result
+				+ ((senderName == null) ? 0 : senderName.hashCode());
 		result = prime * result + sequenceNumber;
 		return result;
 	}
@@ -66,6 +78,11 @@ public class P2PMessage {
 		} else if (!message.equals(other.message))
 			return false;
 		if (senderId != other.senderId)
+			return false;
+		if (senderName == null) {
+			if (other.senderName != null)
+				return false;
+		} else if (!senderName.equals(other.senderName))
 			return false;
 		if (sequenceNumber != other.sequenceNumber)
 			return false;

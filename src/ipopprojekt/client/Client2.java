@@ -8,15 +8,12 @@ import java.util.Scanner;
 public class Client2 {
 	public static void main(String[] args) {
 		try {
-			P2PClient client = new P2PClient(4712, 2, new ChatMessageReceived() {
+			P2PClient client = new P2PClient(4712, 2, "Client 2", new ChatMessageReceived() {
 				@Override
 				public void received(ChatMessage message) {
 					System.out.println(message);
 				}
 			});
-			
-			client.addUser(1, "Client 1");
-			client.addUser(3, "Client 3");
 			
 			client.addNeighbor(3, new InetSocketAddress(InetAddress.getLocalHost(), 4713));
 			

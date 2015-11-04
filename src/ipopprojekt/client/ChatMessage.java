@@ -1,6 +1,5 @@
 package ipopprojekt.client;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 /**
  * Represents a chat message

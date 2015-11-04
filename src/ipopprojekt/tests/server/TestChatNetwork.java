@@ -1,11 +1,7 @@
 package ipopprojekt.tests.server;
 
 import static org.junit.Assert.*;
-
-import java.util.Random;
-
 import ipopprojekt.server.ChatNetwork;
-
 import org.junit.Test;
 
 /**

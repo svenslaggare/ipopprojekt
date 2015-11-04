@@ -24,17 +24,17 @@ public class P2PClient implements P2PMessageReceived {
 	
 	public final int MAX_PACKET_SIZE = 10 * 1024;
 	
-	private final Map<Integer, String> users = new HashMap<>();
 	private final Map<Integer, InetSocketAddress> neighbors = new HashMap<>();
 	
 	/**
 	 * Creates a new P2P client
 	 * @param port The port used
 	 * @param userId The id of the client
+	 * @param name The name of the user
 	 * @param chatMessageReceived Handles when a chat message is received for the client
 	 */
-	public P2PClient(int port, int userId, ChatMessageReceived chatMessageReceived) throws SocketException {
-		this.messageHandler = new P2PMessageHandler(userId);
+	public P2PClient(int port, int userId, String name, ChatMessageReceived chatMessageReceived) throws SocketException {
+		this.messageHandler = new P2PMessageHandler(userId, name);
 		this.clientSocket = new DatagramSocket(port);
 		this.chatMessageReceived = chatMessageReceived;
 		
@@ -64,17 +64,6 @@ public class P2PClient implements P2PMessageReceived {
 			}
 		});
 		receiveThread.start();
-	}
-
-	/**
-	 * Adds the given user 
-	 * @param id The id of the user
-	 * @param name The name of the user
-	 */
-	public void addUser(int id, String name) {
-		synchronized (this.users) {
-			this.users.put(id, name);
-		}
 	}
 	
 	/**
@@ -144,17 +133,10 @@ public class P2PClient implements P2PMessageReceived {
 		
 		//Display the message
 		synchronized (this.chatMessageReceived) {
-			synchronized (this.users) {
-				if (this.users.containsKey(message.getSenderId())) {
-					String sender = this.users.get(message.getSenderId());
-					this.chatMessageReceived.received(new ChatMessage(
-						LocalDateTime.now(),
-						sender,
-						message.getMessage()));
-				} else {
-					System.err.println("Received message from unknown sender (" + message.getSenderId() + ").");
-				}
-			}
+			this.chatMessageReceived.received(new ChatMessage(
+				LocalDateTime.now(),
+				message.getSenderName(),
+				message.getMessage()));
 		}
 		
 		//Relay it to other clients
