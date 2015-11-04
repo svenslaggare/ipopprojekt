@@ -23,6 +23,7 @@ public class TestChatNetwork {
 		for (int i = 0; i < 1000; i++) {
 			network.addClient(i);
 			assertTrue(network.isConnected());
+			assertTrue(network.exists(i));
 		}
 	}
 	
@@ -40,8 +41,10 @@ public class TestChatNetwork {
 		assertTrue(network.isConnected());
 
 		for (int i = 0; i < 150; i++) {
-			network.removeClient(network.randomClientInNetwork());
+			int clientId = network.randomClientInNetwork();
+			network.removeClient(clientId);
 			assertTrue(network.isConnected());
+			assertFalse(network.exists(clientId));
 		}
 	}
 }

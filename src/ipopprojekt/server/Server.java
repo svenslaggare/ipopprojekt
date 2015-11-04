@@ -14,7 +14,7 @@ import ipopproject.messages.MessageId;
  * and delegate to whom each client shall send messages.
  */
 public class Server implements Runnable {
-	private int port;
+	private final int port;
 	private ServerSocket serverSocket;
 	
 	private List<Client> clients;
@@ -23,6 +23,7 @@ public class Server implements Runnable {
 	private ClientConnectionEvent clientConnectionEvent;
 	
 	private boolean isRunning = false;
+	private ChatNetwork chatNetwork;
 	
 	/**
 	 * Creates a new server that listens on the given port
@@ -72,6 +73,7 @@ public class Server implements Runnable {
 		if (!this.isRunning) {
 			try	{
 				this.clients = new ArrayList<Client>();
+				this.chatNetwork = new ChatNetwork(1);
 				
 				System.out.println("Starting server at port: " + port + "...");
 				

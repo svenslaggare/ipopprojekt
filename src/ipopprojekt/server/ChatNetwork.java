@@ -218,6 +218,14 @@ public class ChatNetwork {
 	public int randomClientInNetwork() {
 		return this.clients.get(this.random.nextInt(this.clients.size()));
 	}
+	
+	/**
+	 * Indicates if the given client exists in the network
+	 * @param clientId The id of the client
+	 */
+	public boolean exists(int clientId) {
+		return this.neighborList.containsKey(clientId);
+	}
 		
 	/**
 	 * Adds the given client to the network
