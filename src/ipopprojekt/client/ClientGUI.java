@@ -54,27 +54,33 @@ public class ClientGUI {
 		sendButton.setLocation(255, 58);
 		sendButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e) {
-				// Connect
-				int chatRoom = 1;
-				if (chatRoom2.isSelected()) {
-					chatRoom = 2;
-				} else if (chatRoom3.isSelected()) {
-					chatRoom = 3;
-				}
+				String name = inputField.getText().trim();
 				
-				client = new NetworkClient(inputField.getText(), chatRoom, new ChatMessageReceived() {			
-					@Override
-					public void received(ChatMessage message) {
-						chat.append(message + "\n");
+				if (!name.isEmpty()) {
+					// Connect
+					int chatRoom = 1;
+					if (chatRoom2.isSelected()) {
+						chatRoom = 2;
+					} else if (chatRoom3.isSelected()) {
+						chatRoom = 3;
 					}
-				});
-				
-				inputField.setText("");
-				
-				sendButton.removeActionListener(this);
-				frame.remove(roomsPanel);
-				
-				showChatClient();
+					
+					client = new NetworkClient(name, chatRoom, new ChatMessageReceived() {			
+						@Override
+						public void received(ChatMessage message) {
+							chat.append(message + "\n");
+						}
+					});
+					
+					inputField.setText("");
+					
+					sendButton.removeActionListener(this);
+					frame.remove(roomsPanel);
+					
+					frame.setTitle("P2P Chat [" + chatRoom3.getText() + "] - " + name);
+					
+					showChatClient();
+				}
 			}
 		});
 		frame.add(sendButton);
@@ -101,6 +107,7 @@ public class ClientGUI {
 			public void actionPerformed(ActionEvent e) {
 				chat.append(new ChatMessage(LocalDateTime.now(), client.getName(), inputField.getText()).toString() + "\n");	
 				client.sendMessage(inputField.getText());
+				
 				inputField.setText("");
 				inputField.requestFocusInWindow();
 			}

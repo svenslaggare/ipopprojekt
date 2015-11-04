@@ -46,7 +46,7 @@ public class ChatMessage {
 	@Override
 	public String toString() {
 		return String.format(
-			"%s - %s: %s",
+			"[%s] %s: %s",
 			this.sent.format(DateTimeFormatter.ofPattern("HH:mm:ss")),
 			this.sender,
 			this.message);
