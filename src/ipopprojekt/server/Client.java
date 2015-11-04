@@ -6,7 +6,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 
 public class Client implements Runnable {
 	private Socket socket;
@@ -37,21 +36,6 @@ public class Client implements Runnable {
 	}
 	
 	/**
-	 * Sets the player's name if it hasen't already been set
-	 * @param name The name
-	 * @return True if the object was set else false
-	 */
-	public synchronized boolean setName(String name) {
-		if (this.name == null) {
-			this.name = name;
-			
-			return true;
-		} else {
-			return false;
-		}
-	}
-	
-	/**
 	 * Indicates if the client is connected
 	 */
 	public boolean isConnected() {
@@ -63,14 +47,21 @@ public class Client implements Runnable {
 		while (this.isConnected()) {
 			//Handle commands
 			try {
-				//Read the message header
-				int commandSize = this.streamIn.readInt();
-				short numberOfCommands = this.streamIn.readShort();
+				byte messageID = this.streamIn.readByte();
 				
-				//Read the command buffer
-				byte[] commandData = new byte[commandSize];				
-				this.streamIn.read(commandData, 0, commandSize);
-				ByteBuffer commandBuffer = ByteBuffer.wrap(commandData);
+				switch (MessageID.fromByte(messageID)) {
+				case SET_NAME:
+					{
+						String message = this.streamIn.readUTF();
+						this.name = message;
+					}
+					break;
+				case GET_LIST:
+					{
+						
+					}
+					break;
+				}
 			} catch (IOException e) {
 				this.server.removeClient(this);
 				break;
