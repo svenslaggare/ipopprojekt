@@ -11,6 +11,9 @@ import java.util.Random;
 
 import ipopproject.messages.MessageId;
 
+/**
+ * Represents a client that handles the structure of the chat network
+ */
 public class NetworkClient implements Runnable {
 	private String name;
 	private int chatRoom;
@@ -25,18 +28,24 @@ public class NetworkClient implements Runnable {
 	private int p2pPort = -1;
 	private int userId;
 	private P2PClient p2pClient;
+	
 	private final ChatMessageReceived chatMessageReceived;
-	private final ChatroomListReceived chatroomListReceived;
+	private final ChatRoomListReceived chatRoomListReceived;
+	private final ConnectionEvents connectionEvents;
 	
 	/**
 	 * Creates a new network client
-	 * @param name The name of the client
-	 * @param chatRoom The room
 	 * @param chatMessageReceived Handles when a message is received
+	 * @param chatroomListReceived Handles when the chat room list is received
+	 * @param connectionEvents The connection events
 	 */
-	public NetworkClient(ChatMessageReceived chatMessageReceived, ChatroomListReceived chatroomListReceived) {
+	public NetworkClient(
+		ChatMessageReceived chatMessageReceived,
+		ChatRoomListReceived chatroomListReceived,
+		ConnectionEvents connectionEvents) {
 		this.chatMessageReceived = chatMessageReceived;
-		this.chatroomListReceived = chatroomListReceived;
+		this.chatRoomListReceived = chatroomListReceived;
+		this.connectionEvents = connectionEvents;
 		connectToServer("localhost", 4711);
 	}
 	
@@ -133,12 +142,13 @@ public class NetworkClient implements Runnable {
 			this.clientSocket = new Socket(this.serverName, this.serverPort);				
 			this.open();
 			
+			System.out.println("Connected to server: " + this.serverName + ":" + this.serverPort);	
+			this.connectionEvents.connected();
+			
 			//Handle communication in a separate thread
 			Thread clientThread = new Thread(this);
 			clientThread.start();
-						
-			System.out.println("Connected to server: " + this.serverName + ":" + this.serverPort);	
-			
+									
 			//Choose a random port
 			Random random = new Random();
 			this.p2pPort = 4712 + random.nextInt(10000);
@@ -146,8 +156,10 @@ public class NetworkClient implements Runnable {
 			return true;
 		} catch (UnknownHostException e) {
 			System.out.println(e);
+			this.connectionEvents.failedToConnect();
 		} catch (IOException e) {
 			System.out.println("Could not connect to: " + this.serverName + ":" + this.serverPort);
+			this.connectionEvents.failedToConnect();
 		}
 		
 		return false;
@@ -157,8 +169,13 @@ public class NetworkClient implements Runnable {
 	 * Disconnects from the server
 	 */
 	public void disconnect() {
+		this.connectionEvents.disconnected();
 		System.out.println("Disconnected from server");
 		this.close();
+		
+		if (this.p2pClient != null) {
+			this.p2pClient.close();
+		}
 	}
 
 	@Override
@@ -203,7 +220,7 @@ public class NetworkClient implements Runnable {
 					break;
 				case SET_NUMBER_OF_ROOMS:
 					{
-						chatroomListReceived.listReceived(streamIn.readInt());
+						chatRoomListReceived.listReceived(streamIn.readInt());
 					}
 					break;
 				default: break;

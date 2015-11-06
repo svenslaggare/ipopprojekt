@@ -3,7 +3,7 @@ package ipopprojekt.client;
 /**
  * Handles when the list of chat rooms are received.
  */
-public interface ChatroomListReceived {
+public interface ChatRoomListReceived {
 	/**
 	 * The list is received.
 	 * 

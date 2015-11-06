@@ -9,6 +9,9 @@ import java.net.Socket;
 
 import ipopproject.messages.MessageId;
 
+/**
+ * Represents a client for the central server
+ */
 public class Client implements Runnable {
 	private final Socket socket;
 	private final Server server;
@@ -23,6 +26,7 @@ public class Client implements Runnable {
 	 * Creates an new client
 	 * @param socket The socket for the client
 	 * @param server The server that the client is associated with
+	 * @param id The user id
 	 */
 	public Client(Socket socket, Server server, int id) {
 		this.socket = socket;

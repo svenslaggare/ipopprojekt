@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Represents a P2P client
+ * Represents a P2P client that handles message exchange
  */
 public class P2PClient implements P2PMessageReceived {
 	private final P2PMessageHandler messageHandler;

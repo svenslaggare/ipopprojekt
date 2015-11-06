@@ -10,21 +10,93 @@ import javax.swing.*;
  * The client GUI for the P2P chat.
  */
 public class ClientGUI {
-	private static JFrame frame;
+	private JFrame frame;
 	
-	private static JPanel roomsPanel;
-	private static JLabel roomLabel;
-	private static JSpinner chatRoom;
+	private JPanel roomsPanel;
+	private JLabel roomLabel;
+	private JSpinner chatRoom;
 	
-	private static JTextField inputField;
-	private static JButton sendButton;
+	private JTextField inputField;
+	private JButton sendButton;
 	
-	private static JTextArea chat;
-	private static JScrollPane chatScroll;
+	private JTextArea chat;
+	private JScrollPane chatScroll;
 	
-	private static NetworkClient client;
+	private NetworkClient client;
 	
-	private static void showConnectBox() {
+	/**
+	 * Creates a new GUI
+	 */
+	public ClientGUI() {
+		createBase();	
+		frame.setVisible(true);	
+		
+		client = new NetworkClient(new ChatMessageReceived() {			
+			@Override
+			public void received(ChatMessage message) {
+				chat.append(message + "\n");
+			}
+		}, new ChatRoomListReceived() {
+			@Override
+			public void listReceived(int numRooms) {
+				SpinnerNumberModel model = (SpinnerNumberModel)chatRoom.getModel();
+				model.setMaximum(numRooms);
+			}
+		}, new ConnectionEvents() {		
+			@Override
+			public void failedToConnect() {
+				JLabel failText = new JLabel("Could not connect to server.");
+				failText.setBounds(50, 5, 250, 20);
+				frame.add(failText);
+				frame.setVisible(true);
+			}
+			
+			@Override
+			public void disconnected() {
+				roomsPanel.setVisible(false);
+				inputField.setVisible(false);
+				sendButton.setVisible(false);
+				
+				if (chat != null) {
+					chat.setVisible(false);
+					chatScroll.setVisible(false);
+				}
+				
+				JLabel failText = new JLabel("Disconnected from server.");
+				failText.setBounds(70, 5, 250, 20);
+				frame.add(failText);
+				frame.setVisible(true);
+			}
+			
+			@Override
+			public void connected() {
+				showConnectBox();
+			}
+		});
+	}
+	
+	/**
+	 * Creates the base GUI
+	 */
+	private void createBase() {
+		frame = new JFrame("P2P Chat");
+		frame.setLayout(null);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setSize(336, 350);
+		frame.setResizable(false);
+		
+		inputField = new JTextField();
+		inputField.setSize(250, 20);
+		
+		sendButton = new JButton();
+		sendButton.setSize(70, 20);
+		sendButton.setMargin(new Insets(0, 0, 0, 0));
+	}
+	
+	/**
+	 * Displays the connection box
+	 */
+	private void showConnectBox() {
 		roomsPanel = new JPanel();
 		roomsPanel.setBounds(5, 8, 320, 50);
 		
@@ -67,14 +139,22 @@ public class ClientGUI {
 		
 		frame.getRootPane().setDefaultButton(sendButton);
 		inputField.requestFocusInWindow();
+		frame.setVisible(true);
 	}
 	
-	private static void showChatClient() {
+	/**
+	 * Shows the chat client
+	 */
+	private void showChatClient() {
 		chat = new JTextArea();
 		chat.setLineWrap(true);
 		chat.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		chat.setEditable(false);
-		chatScroll = new JScrollPane(chat, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		chatScroll = new JScrollPane(
+			chat,
+			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		
 		chatScroll.setBounds(5, 8, 320, 280);
 		frame.add(chatScroll);
 		
@@ -98,35 +178,10 @@ public class ClientGUI {
 		inputField.requestFocusInWindow();
 	}
 	
+	/**
+	 * Main entry point
+	 */
 	public static void main(String[] args) {
-		frame = new JFrame("P2P Chat");
-		frame.setLayout(null);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setSize(336, 350);
-		frame.setResizable(false);
-		
-		inputField = new JTextField();
-		inputField.setSize(250, 20);
-		
-		sendButton = new JButton();
-		sendButton.setSize(70, 20);
-		sendButton.setMargin(new Insets(0, 0, 0, 0));
-		
-		showConnectBox();
-		
-		frame.setVisible(true);
-		
-		client = new NetworkClient(new ChatMessageReceived() {			
-			@Override
-			public void received(ChatMessage message) {
-				chat.append(message + "\n");
-			}
-		}, new ChatroomListReceived() {
-			@Override
-			public void listReceived(int numRooms) {
-				SpinnerNumberModel model = (SpinnerNumberModel)chatRoom.getModel();
-				model.setMaximum(numRooms);
-			}
-		});
+		new ClientGUI();
 	}
 }
