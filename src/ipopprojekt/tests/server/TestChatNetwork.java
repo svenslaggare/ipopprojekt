@@ -44,6 +44,28 @@ public class TestChatNetwork {
 	}
 	
 	/**
+	 * Tests that if a client leaves the network that it remains connected
+	 */
+	@Test
+	public void testConnectedIfLeave2() {
+		ChatNetwork network = new ChatNetwork(1);
+		
+		for (int i = 0; i < 100; i++) {
+			network.addClient(i);
+			assertTrue(network.isConnected());
+		}
+		
+		assertTrue(network.isConnected());
+
+		for (int i = 0; i < 10; i++) {
+			int clientId = network.randomClientInNetwork();
+			network.removeClient(clientId);
+			assertTrue(network.isConnected());
+			assertFalse(network.exists(clientId));
+		}
+	}
+	
+	/**
 	 * Tests a sample network
 	 */
 	@Test

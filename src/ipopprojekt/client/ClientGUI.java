@@ -163,7 +163,9 @@ public class ClientGUI {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				showChatScreen();
-				client.connect((int)chatRoomSelector.getValue());
+				int roomId = (int)chatRoomSelector.getValue();
+				client.connect(roomId);
+				frame.setTitle("P2P Chat [Room: " + roomId + "] - " + client.getName());
 			}
 		});
 		
@@ -239,8 +241,7 @@ public class ClientGUI {
 		this.connectPanel.setVisible(false);
 		this.chatRoomPanel.setVisible(false);
 	}
-	
-	
+		
 	/**
 	 * Main entry point
 	 */

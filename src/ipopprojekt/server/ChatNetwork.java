@@ -261,6 +261,33 @@ public class ChatNetwork {
 	}
 		
 	/**
+	 * Makes the network connected again
+	 * @param changes  The changes that needs to be made
+	 */
+	private void makeConnected(Map<Integer, Changes> changes) {
+		while (!this.isConnected()) {
+			int from = this.randomClientInNetwork();
+			
+			//Check that there is any edge to add
+			if (this.neighborList.get(from).size() < this.clients.size() - 1) {
+				int to = this.randomClient(from, this.neighborList.get(from));
+				addEdge(this.neighborList, from, to);
+				
+				Changes vertexChanges = null;
+				if (changes.containsKey(from)) {
+					vertexChanges = changes.get(from);
+				} else {
+					Set<Change> clientChanges = new HashSet<>();
+					vertexChanges = new Changes(from, clientChanges);
+					changes.put(from, vertexChanges);
+				}
+				
+				vertexChanges.changes.add(new Change(to, ChangeType.ADD));		
+			}
+		}
+	}
+	
+	/**
 	 * Adds the given client to the network
 	 * @param clientId The id of the client
 	 * @param The changes that need to be sent to the clients
@@ -270,7 +297,7 @@ public class ChatNetwork {
 		Set<Integer> clientList = new HashSet<>();
 		this.neighborList.put(clientId, clientList);
 		
-		List<Changes> changes = new ArrayList<>();
+		Map<Integer, Changes> changes = new HashMap<>();
 		
 		if (this.clients.size() > 1) {	
 			Set<Change> clientChanges = new HashSet<>();
@@ -282,7 +309,7 @@ public class ChatNetwork {
 				clientChanges.add(new Change(rand, ChangeType.ADD));
 			}
 			
-			changes.add(new Changes(clientId, clientChanges));
+			changes.put(clientId, new Changes(clientId, clientChanges));
 			
 			//Then add clients that has the new client as a neighbor
 			Set<Integer> added = new HashSet<>();
@@ -290,11 +317,14 @@ public class ChatNetwork {
 				int rand = this.randomClient(clientId, added);
 				added.add(rand);
 				this.neighborList.get(rand).add(clientId);
-				changes.add(new Changes(rand, Collections.singleton(new Change(clientId, ChangeType.ADD))));
+				changes.put(rand, new Changes(rand, Collections.singleton(new Change(clientId, ChangeType.ADD))));
 			}
+			
+			//Make sure that the network is connected
+			this.makeConnected(changes);
 		}
 		
-		return changes;
+		return new ArrayList<>(changes.values());
 	}
 	
 	/**
@@ -321,26 +351,7 @@ public class ChatNetwork {
 		if (this.clients.size() > 0) {
 			//After removing the client, its possible that the network becomes unconnected.
 			//So add random connections until the network becomes connected again.	
-			while (!this.isConnected()) {
-				int from = this.randomClientInNetwork();
-				
-				//Check that there is any edge to add
-				if (this.neighborList.get(from).size() < this.clients.size() - 1) {
-					int to = this.randomClient(from, this.neighborList.get(from));
-					addEdge(this.neighborList, from, to);
-					
-					Changes vertexChanges = null;
-					if (changes.containsKey(from)) {
-						vertexChanges = changes.get(from);
-					} else {
-						Set<Change> clientChanges = new HashSet<>();
-						vertexChanges = new Changes(from, clientChanges);
-						changes.put(from, vertexChanges);
-					}
-					
-					vertexChanges.changes.add(new Change(to, ChangeType.ADD));		
-				}
-			}
+			this.makeConnected(changes);
 		}
 		
 		return new ArrayList<>(changes.values());
