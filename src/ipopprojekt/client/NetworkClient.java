@@ -12,14 +12,14 @@ import java.util.Random;
 import ipopproject.messages.MessageId;
 
 /**
- * Represents a client that handles the structure of the chat network
+ * Represents a network client
  */
 public class NetworkClient implements Runnable {
-	private String name;
+	private final String name;
 	private int chatRoom;
 	
-	private String serverName;
-	private int serverPort;
+	private final String serverName;
+	private final int serverPort;
 	
 	private Socket clientSocket;
 	private DataInputStream streamIn;
@@ -35,18 +35,27 @@ public class NetworkClient implements Runnable {
 	
 	/**
 	 * Creates a new network client
+	 * @param serverName The name of the server
+	 * @param serverPort The port of the server
+	 * @param name The name of the client
 	 * @param chatMessageReceived Handles when a message is received
 	 * @param chatroomListReceived Handles when the chat room list is received
-	 * @param connectionEvents The connection events
+	 * @param connectionEvents Handles connection events
 	 */
 	public NetworkClient(
+		String serverName,
+		int serverPort,
+		String name,	
 		ChatMessageReceived chatMessageReceived,
 		ChatRoomListReceived chatroomListReceived,
 		ConnectionEvents connectionEvents) {
+		this.serverName = serverName;
+		this.serverPort = serverPort;
+		this.name = name;
 		this.chatMessageReceived = chatMessageReceived;
 		this.chatRoomListReceived = chatroomListReceived;
 		this.connectionEvents = connectionEvents;
-		connectToServer("localhost", 4711);
+		connectToServer();
 	}
 	
 	/**
@@ -54,13 +63,6 @@ public class NetworkClient implements Runnable {
 	 */
 	public String getName() {
 		return name;
-	}
-	
-	/**
-	 * Sets the client's name.
-	 */
-	public void setName(String name) {
-		this.name = name;
 	}
 	
 	/**
@@ -96,8 +98,7 @@ public class NetworkClient implements Runnable {
 	}
 	
 	/**
-	 * Opens the streams and socket
-	 * @throws IOException 
+	 * Opens the I/O streams
 	 */
 	private void open() throws IOException {
 		this.streamIn = new DataInputStream(new BufferedInputStream(this.clientSocket.getInputStream()));
@@ -132,10 +133,7 @@ public class NetworkClient implements Runnable {
 	 * @param serverPort The server port
 	 * @return True if the client was connected else false
 	 */
-	private boolean connectToServer(String serverName, int serverPort) {
-		this.serverName = serverName;
-		this.serverPort = serverPort;
-		
+	private boolean connectToServer() {		
 		System.out.println("Connecting to server...");
 		
 		try {
@@ -149,7 +147,7 @@ public class NetworkClient implements Runnable {
 			Thread clientThread = new Thread(this);
 			clientThread.start();
 									
-			//Choose a random port
+			//Choose a random port to receive messages on
 			Random random = new Random();
 			this.p2pPort = 4712 + random.nextInt(10000);
 			
@@ -181,12 +179,11 @@ public class NetworkClient implements Runnable {
 	@Override
 	public void run() {
 		while (this.isConnected()) {
-			//Handle commands
 			try {
 				//Read the message header
-				byte messageID = streamIn.readByte();
+				byte messageI = streamIn.readByte();
 				
-				switch (MessageId.fromByte(messageID)) {
+				switch (MessageId.fromByte(messageI)) {
 				case ADD_NEIGHBORS:
 					{
 						int num = streamIn.readInt();
@@ -239,7 +236,7 @@ public class NetworkClient implements Runnable {
 		this.chatRoom = chatRoom;
 		
 		try {
-			this.p2pClient = new P2PClient(this.p2pPort, this.userId, this.name, chatMessageReceived);
+			this.p2pClient = new P2PClient(this.p2pPort, this.userId, this.name, this.chatMessageReceived);
 			
 			this.streamOut.writeByte(MessageId.CONNECT_CLIENT.getId());
 			this.streamOut.writeInt(this.p2pPort);

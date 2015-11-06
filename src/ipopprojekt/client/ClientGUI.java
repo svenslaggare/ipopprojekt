@@ -1,24 +1,34 @@
 package ipopprojekt.client;
 
-import java.awt.*;
 import java.awt.event.*;
 import java.time.LocalDateTime;
 
 import javax.swing.*;
 
 /**
- * The client GUI for the P2P chat.
+ * The GUI for the P2P chat client.
  */
 public class ClientGUI {
 	private JFrame frame;
 	
-	private JPanel roomsPanel;
-	private JLabel roomLabel;
-	private JSpinner chatRoom;
+	private JPanel connectPanel;
+	private JLabel serverNameLabel;
+	private JTextField serverName;
+	private JLabel serverPortLabel;
+	private JTextField serverPort;
+	private JLabel userNameLabel;
+	private JTextField userName;
+	private JButton connectButton;
+	private JLabel errorLabel;
 	
+	private JPanel chatRoomPanel;
+	private JLabel chatRoomLabel;
+	private JSpinner chatRoomSelector;
+	private JButton joinRoomButton;
+	
+	private JPanel chatPanel;
 	private JTextField inputField;
-	private JButton sendButton;
-	
+	private JButton sendButton;	
 	private JTextArea chat;
 	private JScrollPane chatScroll;
 	
@@ -28,160 +38,218 @@ public class ClientGUI {
 	 * Creates a new GUI
 	 */
 	public ClientGUI() {
-		createBase();	
-		frame.setVisible(true);	
-		
-		client = new NetworkClient(new ChatMessageReceived() {			
-			@Override
-			public void received(ChatMessage message) {
-				chat.append(message + "\n");
-			}
-		}, new ChatRoomListReceived() {
-			@Override
-			public void listReceived(int numRooms) {
-				SpinnerNumberModel model = (SpinnerNumberModel)chatRoom.getModel();
-				model.setMaximum(numRooms);
-			}
-		}, new ConnectionEvents() {		
-			@Override
-			public void failedToConnect() {
-				JLabel failText = new JLabel("Could not connect to server.");
-				failText.setBounds(50, 5, 250, 20);
-				frame.add(failText);
-				frame.setVisible(true);
-			}
-			
-			@Override
-			public void disconnected() {
-				roomsPanel.setVisible(false);
-				inputField.setVisible(false);
-				sendButton.setVisible(false);
-				
-				if (chat != null) {
-					chat.setVisible(false);
-					chatScroll.setVisible(false);
-				}
-				
-				JLabel failText = new JLabel("Disconnected from server.");
-				failText.setBounds(70, 5, 250, 20);
-				frame.add(failText);
-				frame.setVisible(true);
-			}
-			
-			@Override
-			public void connected() {
-				showConnectBox();
-			}
-		});
+		this.create();	
+		this.showConnectScreen();
 	}
 	
 	/**
-	 * Creates the base GUI
+	 * Creates the GUI
 	 */
-	private void createBase() {
-		frame = new JFrame("P2P Chat");
-		frame.setLayout(null);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setSize(336, 350);
-		frame.setResizable(false);
+	private void create() {
+		//The frame
+		this.frame = new JFrame("P2P Chat");
+		this.frame.setLayout(null);
+		this.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.frame.setSize(336, 350);
+		this.frame.setResizable(false);
+		this.frame.setVisible(true);	
 		
-		inputField = new JTextField();
-		inputField.setSize(250, 20);
+		//The connect screen
+		int marginLeft = 10;
+		final int deltaY = 25;
+		int posY = 5;
 		
-		sendButton = new JButton();
-		sendButton.setSize(70, 20);
-		sendButton.setMargin(new Insets(0, 0, 0, 0));
-	}
-	
-	/**
-	 * Displays the connection box
-	 */
-	private void showConnectBox() {
-		roomsPanel = new JPanel();
-		roomsPanel.setBounds(5, 8, 320, 50);
+		this.connectPanel = new JPanel(null);
+		this.connectPanel.setVisible(false);
+		this.connectPanel.setSize(336, 350);
+		this.frame.add(this.connectPanel);
 		
-		roomLabel = new JLabel("Room:");
-		roomsPanel.add(roomLabel);
+		this.serverNameLabel = new JLabel("Server hostname:");
+		this.serverNameLabel.setBounds(marginLeft, posY, 130, 20);
+		this.connectPanel.add(this.serverNameLabel);
 		
-		chatRoom = new JSpinner(new SpinnerNumberModel(1, 1, 1, 1));
-		roomsPanel.add(chatRoom);
+		this.serverName = new JTextField("localhost");
+		this.serverName.setBounds(marginLeft + 140, posY, 125, 20);
+		this.connectPanel.add(this.serverName);
 		
-		frame.add(roomsPanel);
+		this.serverPortLabel = new JLabel("Server port:");
+		this.serverPortLabel.setBounds(marginLeft, posY += deltaY, 130, 20);
+		this.connectPanel.add(this.serverPortLabel);
 		
-		inputField.setLocation(5, 58);
-		frame.add(inputField);
+		this.serverPort = new JTextField("4711");
+		this.serverPort.setBounds(marginLeft + 140, posY, 50, 20);
+		this.connectPanel.add(this.serverPort);
 		
-		sendButton.setText("Connect");
-		sendButton.setLocation(255, 58);
-		sendButton.addActionListener(new ActionListener(){
+		this.userNameLabel = new JLabel("User name:");
+		this.userNameLabel.setBounds(marginLeft, posY += deltaY, 100, 20);
+		this.connectPanel.add(this.userNameLabel);
+		
+		this.userName = new JTextField("");
+		this.userName.setBounds(marginLeft + 140, posY, 120, 20);
+		this.connectPanel.add(this.userName);
+		
+		this.connectButton = new JButton("Connect");
+		this.connectButton.setBounds(marginLeft + 100, posY += deltaY + 10, 120, 20);
+		this.connectPanel.add(this.connectButton);
+		this.connectButton.addActionListener(new ActionListener() {		
+			@Override
 			public void actionPerformed(ActionEvent e) {
-				String name = inputField.getText().trim();
+				String name = userName.getText();
 				
-				if (!name.isEmpty()) {
-					// Connect
-					int room = (int)chatRoom.getValue();
+				if (!name.equals("")) { 
+					errorLabel.setVisible(false);
+					String hostname = serverName.getText();
+					int port = Integer.parseInt(serverPort.getText());
 					
-					client.setName(name);
-					client.connect(room);
-					
-					inputField.setText("");
-					
-					sendButton.removeActionListener(this);
-					frame.remove(roomsPanel);
-					
-					frame.setTitle("P2P Chat [Room " + room + "] - " + name);
-					
-					showChatClient();
+					client = new NetworkClient(hostname, port, name, new ChatMessageReceived() {			
+						@Override
+						public void received(ChatMessage message) {
+							chat.append(message + "\n");
+						}
+					}, new ChatRoomListReceived() {
+						@Override
+						public void listReceived(int numRooms) {
+							SpinnerNumberModel model = (SpinnerNumberModel)chatRoomSelector.getModel();
+							model.setMaximum(numRooms);
+						}
+					}, new ConnectionEvents() {		
+						@Override
+						public void failedToConnect() {
+							errorLabel.setText("Could not connect to server.");
+							errorLabel.setVisible(true);
+						}
+						
+						@Override
+						public void disconnected() {
+							showConnectScreen();
+							errorLabel.setText("Disconnected from server");
+							errorLabel.setVisible(true);
+						}
+						
+						@Override
+						public void connected() {
+							showJoinRoomScreen();
+						}
+					});
 				}
 			}
 		});
-		frame.add(sendButton);
 		
-		frame.getRootPane().setDefaultButton(sendButton);
-		inputField.requestFocusInWindow();
-		frame.setVisible(true);
-	}
-	
-	/**
-	 * Shows the chat client
-	 */
-	private void showChatClient() {
-		chat = new JTextArea();
-		chat.setLineWrap(true);
-		chat.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		chat.setEditable(false);
-		chatScroll = new JScrollPane(
-			chat,
+		this.errorLabel = new JLabel();
+		this.errorLabel.setBounds(marginLeft, posY += deltaY, 330, 20);
+		this.errorLabel.setVisible(false);
+		this.connectPanel.add(this.errorLabel);
+		
+		//The join chat room screen
+		posY = 5;
+		marginLeft = 100;
+		this.chatRoomPanel = new JPanel(null);
+		this.chatRoomPanel.setVisible(false);
+		this.chatRoomPanel.setSize(336, 350);
+		this.frame.add(this.chatRoomPanel);
+		
+		this.chatRoomLabel = new JLabel("Room:");
+		this.chatRoomLabel.setBounds(marginLeft, posY, 130, 20);
+		this.chatRoomPanel.add(this.chatRoomLabel);
+		
+		this.chatRoomSelector = new JSpinner(new SpinnerNumberModel(1, 1, 1, 1));
+		this.chatRoomSelector.setBounds(marginLeft + 50, posY, 70, 20);
+		this.chatRoomPanel.add(this.chatRoomSelector);
+		
+		this.joinRoomButton = new JButton("Join");
+		this.joinRoomButton.setBounds(marginLeft + 10, posY + deltaY + 10, 120, 20);
+		this.chatRoomPanel.add(this.joinRoomButton);
+		this.joinRoomButton.addActionListener(new ActionListener() {		
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				showChatScreen();
+				client.connect((int)chatRoomSelector.getValue());
+			}
+		});
+		
+		//Chat screen
+		int chatWidth = 320;
+		
+		this.chatPanel = new JPanel(null);
+		this.chatPanel.setVisible(false);
+		this.chatPanel.setSize(336, 350);
+		this.frame.add(this.chatPanel);
+		
+		this.chat = new JTextArea();
+		this.chat.setLineWrap(true);
+		this.chat.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		this.chat.setEditable(false);
+		this.chatScroll = new JScrollPane(
+			this.chat,
 			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		
-		chatScroll.setBounds(5, 8, 320, 280);
-		frame.add(chatScroll);
+		this.chatScroll.setBounds(5, 8, chatWidth, 280);
+		this.chatPanel.add(chatScroll);
 		
-		inputField.setLocation(5, 294);
-		frame.add(inputField);
+		this.inputField = new JTextField();
+		this.inputField.setBounds(5, 294, chatWidth - 90, 20);
+		this.chatPanel.add(inputField);
 		
-		sendButton.setText("Send");
-		sendButton.setLocation(255, 294);
-		sendButton.addActionListener(new ActionListener(){
+		this.sendButton = new JButton("Send");
+		this.sendButton.setBounds(245, 294, 80, 20);
+		this.sendButton.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e) {
-				chat.append(new ChatMessage(LocalDateTime.now(), client.getName(), inputField.getText()).toString() + "\n");	
+				ChatMessage chatMsg = new ChatMessage(
+					LocalDateTime.now(),
+					client.getName(),
+					inputField.getText());
+				
+				chat.append(chatMsg.toString() + "\n");	
 				client.sendMessage(inputField.getText());
 				
 				inputField.setText("");
 				inputField.requestFocusInWindow();
 			}
 		});
-		frame.add(sendButton);
+		this.chatPanel.add(sendButton);
 		
-		frame.getRootPane().setDefaultButton(sendButton);
-		inputField.requestFocusInWindow();
+		this.frame.getRootPane().setDefaultButton(this.sendButton);
+		this.inputField.requestFocusInWindow();
 	}
+	
+	/**
+	 * Shows the connect screen
+	 */
+	private void showConnectScreen() {
+		this.connectPanel.setVisible(true);
+		this.chatRoomPanel.setVisible(false);
+		this.chatPanel.setVisible(false);
+	}
+	
+	/**
+	 * Shows the join chat room screen
+	 */
+	private void showJoinRoomScreen() {
+		this.chatRoomPanel.setVisible(true);
+		this.connectPanel.setVisible(false);
+		this.chatPanel.setVisible(false);
+	}
+	
+	/**
+	 * Shows the chat screen
+	 */
+	private void showChatScreen() {
+		this.chatPanel.setVisible(true);
+		this.connectPanel.setVisible(false);
+		this.chatRoomPanel.setVisible(false);
+	}
+	
 	
 	/**
 	 * Main entry point
 	 */
 	public static void main(String[] args) {
-		new ClientGUI();
+		 SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+            	new ClientGUI();
+            }
+        });
 	}
 }

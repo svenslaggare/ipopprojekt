@@ -223,7 +223,18 @@ public class Server implements Runnable {
 	}
 	
 	public static void main(String[] args) {
-		Server server = new Server(4711);
+		int port = 4711;
+		
+		if (args.length > 0) {
+			try {
+				port = Integer.parseInt(args[0]);
+			} catch (NumberFormatException e) {
+				System.out.println("Invalid port");
+				return;
+			}
+		}
+		
+		Server server = new Server(port);
 		
 		server.addRoom();
 		server.addRoom();
