@@ -15,7 +15,7 @@ public class TestChatNetwork {
 	public void testConnected() {
 		ChatNetwork network = new ChatNetwork(3);
 		
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < 500; i++) {
 			network.addClient(i);
 			assertTrue(network.isConnected());
 			assertTrue(network.exists(i));
@@ -29,13 +29,13 @@ public class TestChatNetwork {
 	public void testConnectedIfLeave() {
 		ChatNetwork network = new ChatNetwork(3);
 		
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < 500; i++) {
 			network.addClient(i);
 		}
 		
 		assertTrue(network.isConnected());
 
-		for (int i = 0; i < 150; i++) {
+		for (int i = 0; i < 100; i++) {
 			int clientId = network.randomClientInNetwork();
 			network.removeClient(clientId);
 			assertTrue(network.isConnected());

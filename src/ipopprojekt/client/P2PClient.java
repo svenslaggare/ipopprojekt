@@ -41,9 +41,10 @@ public class P2PClient implements P2PMessageReceived {
 		//Listen for incoming messages
 		Thread receiveThread = new Thread(new Runnable() {		
 			@Override
-			public void run() {
+			public void run() {		
+				byte[] buffer = new byte[MAX_PACKET_SIZE];
+				
 				while (connected) {
-					byte[] buffer = new byte[MAX_PACKET_SIZE];
 					DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 					
 					try {
