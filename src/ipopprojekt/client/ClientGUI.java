@@ -13,10 +13,8 @@ public class ClientGUI {
 	private static JFrame frame;
 	
 	private static JPanel roomsPanel;
-	private static JRadioButton chatRoom1;
-	private static JRadioButton chatRoom2;
-	private static JRadioButton chatRoom3;
-	private static ButtonGroup chatRooms;
+	private static JLabel roomLabel;
+	private static JSpinner chatRoom;
 	
 	private static JTextField inputField;
 	private static JButton sendButton;
@@ -30,20 +28,11 @@ public class ClientGUI {
 		roomsPanel = new JPanel();
 		roomsPanel.setBounds(5, 8, 320, 50);
 		
-		chatRoom1 = new JRadioButton("Room 1");
-		chatRoom1.setSelected(true);
-		roomsPanel.add(chatRoom1);
+		roomLabel = new JLabel("Room:");
+		roomsPanel.add(roomLabel);
 		
-		chatRoom2 = new JRadioButton("Room 2");
-		roomsPanel.add(chatRoom2);
-		
-		chatRoom3 = new JRadioButton("Room 3");
-		roomsPanel.add(chatRoom3);
-		
-		chatRooms = new ButtonGroup();
-		chatRooms.add(chatRoom1);
-		chatRooms.add(chatRoom2);
-		chatRooms.add(chatRoom3);
+		chatRoom = new JSpinner(new SpinnerNumberModel(1, 1, 1, 1));
+		roomsPanel.add(chatRoom);
 		
 		frame.add(roomsPanel);
 		
@@ -58,26 +47,17 @@ public class ClientGUI {
 				
 				if (!name.isEmpty()) {
 					// Connect
-					int chatRoom = 1;
-					if (chatRoom2.isSelected()) {
-						chatRoom = 2;
-					} else if (chatRoom3.isSelected()) {
-						chatRoom = 3;
-					}
+					int room = (int)chatRoom.getValue();
 					
-					client = new NetworkClient(name, chatRoom, new ChatMessageReceived() {			
-						@Override
-						public void received(ChatMessage message) {
-							chat.append(message + "\n");
-						}
-					});
+					client.setName(name);
+					client.connect(room);
 					
 					inputField.setText("");
 					
 					sendButton.removeActionListener(this);
 					frame.remove(roomsPanel);
 					
-					frame.setTitle("P2P Chat [Room " + chatRoom + "] - " + name);
+					frame.setTitle("P2P Chat [Room " + room + "] - " + name);
 					
 					showChatClient();
 				}
@@ -135,5 +115,18 @@ public class ClientGUI {
 		showConnectBox();
 		
 		frame.setVisible(true);
+		
+		client = new NetworkClient(new ChatMessageReceived() {			
+			@Override
+			public void received(ChatMessage message) {
+				chat.append(message + "\n");
+			}
+		}, new ChatroomListReceived() {
+			@Override
+			public void listReceived(int numRooms) {
+				SpinnerNumberModel model = (SpinnerNumberModel)chatRoom.getModel();
+				model.setMaximum(numRooms);
+			}
+		});
 	}
 }

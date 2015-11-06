@@ -130,6 +130,9 @@ public class Server implements Runnable {
 			//Send the id to the client
 			this.sendClientId(newClient);
 			
+			//Send the rooms to the client
+			this.sendRooms(newClient);
+			
 			System.out.println("Client accepted: " + clientSocket.getRemoteSocketAddress());
 		} catch(IOException e) {
 			System.err.println("Error opening client: " + e);
@@ -172,16 +175,32 @@ public class Server implements Runnable {
 	}
 	
 	/**
+	 * Sends the rooms to the client
+	 * @param client The client
+	 */
+	private void sendRooms(Client client) {
+		try {
+			client.getOutputStream().writeByte(MessageId.SET_NUMBER_OF_ROOMS.getId());
+			client.getOutputStream().writeInt(chatRooms.size());
+			client.getOutputStream().flush();
+		} catch (IOException e) {
+			System.err.println("Could not send rooms: " + e);
+		}
+	}
+	
+	/**
 	 * Handles that the given client has connected
 	 * @param client The newly connected client
 	 * @param chatRoom The chat room to join.
 	 */
 	public void clientConnected(Client client, int chatRoom) {
 		synchronized (chatRooms) {
-			if (chatRoom > 0 && chatRoom < chatRooms.size()) {
+			if (chatRoom > 0 && chatRoom <= chatRooms.size()) {
 				ChatRoom room = chatRooms.get(chatRoom - 1);
 				room.addClient(client);
 			} else {
+				System.err.println("Invalid room: " + chatRoom);
+				
 				client.close();
 			}
 		}

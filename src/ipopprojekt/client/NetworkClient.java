@@ -23,8 +23,10 @@ public class NetworkClient implements Runnable {
 	private DataOutputStream streamOut;
 	
 	private int p2pPort = -1;
+	private int userId;
 	private P2PClient p2pClient;
 	private final ChatMessageReceived chatMessageReceived;
+	private final ChatroomListReceived chatroomListReceived;
 	
 	/**
 	 * Creates a new network client
@@ -32,11 +34,10 @@ public class NetworkClient implements Runnable {
 	 * @param chatRoom The room
 	 * @param chatMessageReceived Handles when a message is received
 	 */
-	public NetworkClient(String name, int chatRoom, ChatMessageReceived chatMessageReceived) {
-		this.name = name;
-		this.chatRoom = chatRoom;
+	public NetworkClient(ChatMessageReceived chatMessageReceived, ChatroomListReceived chatroomListReceived) {
 		this.chatMessageReceived = chatMessageReceived;
-		connect("localhost", 4711);
+		this.chatroomListReceived = chatroomListReceived;
+		connectToServer("localhost", 4711);
 	}
 	
 	/**
@@ -44,6 +45,13 @@ public class NetworkClient implements Runnable {
 	 */
 	public String getName() {
 		return name;
+	}
+	
+	/**
+	 * Sets the client's name.
+	 */
+	public void setName(String name) {
+		this.name = name;
 	}
 	
 	/**
@@ -109,12 +117,13 @@ public class NetworkClient implements Runnable {
 	}
 	
 	/**
-	 * Connects to the given server
+	 * Connects to the given server.
+	 * 
 	 * @param serverName The server name/IP
 	 * @param serverPort The server port
 	 * @return True if the client was connected else false
 	 */
-	public boolean connect(String serverName, int serverPort) {
+	private boolean connectToServer(String serverName, int serverPort) {
 		this.serverName = serverName;
 		this.serverPort = serverPort;
 		
@@ -133,13 +142,6 @@ public class NetworkClient implements Runnable {
 			//Choose a random port
 			Random random = new Random();
 			this.p2pPort = 4712 + random.nextInt(10000);
-			
-			//Send it to the server
-//			System.out.println("port = " + this.p2pPort);
-			this.streamOut.writeByte(MessageId.CONNECT_CLIENT.getId());
-			this.streamOut.writeInt(this.p2pPort);
-			this.streamOut.writeInt(this.chatRoom);
-			this.streamOut.flush();
 			
 			return true;
 		} catch (UnknownHostException e) {
@@ -196,9 +198,12 @@ public class NetworkClient implements Runnable {
 					break;
 				case SET_USER_ID:
 					{
-						int userId = streamIn.readInt();
-						System.out.println("userId = " + userId);
-						this.p2pClient = new P2PClient(this.p2pPort, userId, this.name, chatMessageReceived);
+						this.userId = streamIn.readInt();
+					}
+					break;
+				case SET_NUMBER_OF_ROOMS:
+					{
+						chatroomListReceived.listReceived(streamIn.readInt());
 					}
 					break;
 				default: break;
@@ -207,6 +212,24 @@ public class NetworkClient implements Runnable {
 				this.disconnect();
 				break;
 			}
+		}
+	}
+	
+	/**
+	 * Connects the client to the chat room.
+	 */
+	public void connect(int chatRoom) {
+		this.chatRoom = chatRoom;
+		
+		try {
+			this.p2pClient = new P2PClient(this.p2pPort, this.userId, this.name, chatMessageReceived);
+			
+			this.streamOut.writeByte(MessageId.CONNECT_CLIENT.getId());
+			this.streamOut.writeInt(this.p2pPort);
+			this.streamOut.writeInt(this.chatRoom);
+			this.streamOut.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
