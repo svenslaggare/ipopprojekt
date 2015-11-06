@@ -5,7 +5,7 @@ package ipopproject.messages;
  */
 public enum MessageId {
 	SET_USER_ID((byte)0),
-	SET_CLIENT_P2P_PORT((byte)1),
+	CONNECT_CLIENT((byte)1),
 	ADD_NEIGHBORS((byte)2),
 	REMOVE_NEIGHBORS((byte)3);
 	
@@ -29,7 +29,7 @@ public enum MessageId {
 	public static MessageId fromByte(byte id) {
 		switch (id) {
 		case 0: return SET_USER_ID;
-		case 1: return SET_CLIENT_P2P_PORT;
+		case 1: return CONNECT_CLIENT;
 		case 2: return ADD_NEIGHBORS;
 		case 3: return REMOVE_NEIGHBORS;
 		}

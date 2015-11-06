@@ -135,9 +135,10 @@ public class NetworkClient implements Runnable {
 			this.p2pPort = 4712 + random.nextInt(10000);
 			
 			//Send it to the server
-			System.out.println("port = " + this.p2pPort);
-			this.streamOut.writeByte(MessageId.SET_CLIENT_P2P_PORT.getId());
+//			System.out.println("port = " + this.p2pPort);
+			this.streamOut.writeByte(MessageId.CONNECT_CLIENT.getId());
 			this.streamOut.writeInt(this.p2pPort);
+			this.streamOut.writeInt(this.chatRoom);
 			this.streamOut.flush();
 			
 			return true;

@@ -4,12 +4,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import ipopproject.messages.MessageId;
-import ipopprojekt.server.ChatNetwork.Change;
-import ipopprojekt.server.ChatNetwork.Changes;
 
 /**
  * The central server that handles all connections
@@ -19,13 +16,11 @@ public class Server implements Runnable {
 	private final int port;
 	private ServerSocket serverSocket;
 	
-	private List<Client> clients;
 	private int nextID = 0;
 	
-	private ClientConnectionEvent clientConnectionEvent;
-	
 	private boolean isRunning = false;
-	private ChatNetwork chatNetwork;
+	
+	private final List<ChatRoom> chatRooms;
 	
 	/**
 	 * Creates a new server that listens on the given port
@@ -33,6 +28,7 @@ public class Server implements Runnable {
 	 */
 	public Server(int port) {
 		this.port = port;
+		this.chatRooms = new ArrayList<>();
 	}
 
 	/**
@@ -40,14 +36,6 @@ public class Server implements Runnable {
 	 */
 	public synchronized boolean isRunning() {
 		return this.isRunning;
-	}
-	
-	/**
-	 * The ClientConnectionEvent handles connection events
-	 * @param clientConnectionEvent The client connection event interface
-	 */
-	public void setClientConnectionEvent(ClientConnectionEvent clientConnectionEvent) {
-		this.clientConnectionEvent = clientConnectionEvent;
 	}
 	
 	@Override
@@ -74,9 +62,6 @@ public class Server implements Runnable {
 	public void start() {
 		if (!this.isRunning) {
 			try	{
-				this.clients = new ArrayList<Client>();
-				this.chatNetwork = new ChatNetwork(1);
-				
 				System.out.println("Starting server at port: " + port + "...");
 				
 				this.serverSocket = new ServerSocket(this.port);
@@ -106,18 +91,25 @@ public class Server implements Runnable {
 			try {
 				this.serverSocket.close();
 				
-				synchronized (this.clients) {
+				synchronized (this.chatRooms) {
 					//Close the connection to all sockets
-					for (Client client : this.clients) {
-						client.close();
+					for (ChatRoom room : chatRooms) {
+						room.close();
 					}
 				}
 			} catch (IOException e) {
 				
 			} finally {
-				this.clients.clear();
+				chatRooms.clear();
 			}
 		}
+	}
+	
+	/**
+	 * Adds a new chat room.
+	 */
+	public void addRoom() {
+		chatRooms.add(new ChatRoom(chatRooms.size()));
 	}
 	
 	/**
@@ -138,15 +130,7 @@ public class Server implements Runnable {
 			//Send the id to the client
 			this.sendClientId(newClient);
 			
-			//Add the client
-			synchronized (this.clients) {
-				this.clients.add(newClient);			
-				System.out.println("Client accepted: " + clientSocket.getRemoteSocketAddress());
-			}
-			
-			if (this.clientConnectionEvent != null) {
-				this.clientConnectionEvent.clientConnected(newClient);
-			}
+			System.out.println("Client accepted: " + clientSocket.getRemoteSocketAddress());
 		} catch(IOException e) {
 			System.err.println("Error opening client: " + e);
 		}	
@@ -162,43 +146,15 @@ public class Server implements Runnable {
 			return false;
 		}
 		
-		synchronized (this.clients) {
-			if (this.clients.contains(client)) {
-				System.out.println("Client: '" + client.toString() + "' removed");
-				
-				if (this.clientConnectionEvent != null) {				
-					this.clientConnectionEvent.clientDisconnected(client);
-				}
-				
-				this.clientDisconnected(client);
-				
-				return true;
-			} else {
-				return false;
-			}
-		}
-	}
-	
-	/**
-	 * Returns clients connected to the server
-	 */
-	public List<Client> getClients() {
-		return this.clients;
-	}
-	
-	/**
-	 * Returns the client with the given id
-	 * @param id The id of the client
-	 * @return The client or null
-	 */
-	public Client getClient(int id) {
-		for (Client client : this.clients) {
-			if (client.getId() == id) {
-				return client;
+		synchronized (this.chatRooms) {
+			ChatRoom room = findRoom(client);
+			
+			if (room != null) {
+				return room.removeClient(client);
 			}
 		}
 		
-		return null;
+		return false;
 	}
 	
 	/**
@@ -217,156 +173,43 @@ public class Server implements Runnable {
 	
 	/**
 	 * Handles that the given client has connected
-	 * @param newClient The newly connected client
+	 * @param client The newly connected client
+	 * @param chatRoom The chat room to join.
 	 */
-	public void clientConnected(Client newClient) {	
-//		//Send first to the newly connected client
-//		this.sendAddNeighbors(newClient, this.getAllClients(newClient));
-//		
-//		//The to the others
-//		for (Client client : this.clients) {
-//			if (client != newClient) {
-//				this.sendAddNeighbors(client, Collections.singletonList(newClient));
-//			}
-//		}
-		
-		//Add the client and distribute the changes
-		for (Changes changes : this.chatNetwork.addClient(newClient.getId())) {
-			List<Client> toAdd = new ArrayList<>();
-			List<Client> toRemove = new ArrayList<>();
-			
-			for (Change change : changes.getChanges()) {
-				switch (change.getType()) {
-				case ADD:
-					toAdd.add(this.getClient(change.getClientId()));
-					break;
-				case REMOVE:
-					toRemove.add(this.getClient(change.getClientId()));
-					break;
-				default:
-					break;
-				}
+	public void clientConnected(Client client, int chatRoom) {
+		synchronized (chatRooms) {
+			if (chatRoom > 0 && chatRoom < chatRooms.size()) {
+				ChatRoom room = chatRooms.get(chatRoom - 1);
+				room.addClient(client);
+			} else {
+				client.close();
 			}
-			
-			this.sendAddNeighbors(this.getClient(changes.getClientId()), toAdd);
-			this.sendRemoveNeighbors(this.getClient(changes.getClientId()), toRemove);
 		}
 	}
 	
 	/**
-	 * Handles that the given client has disconnected
+	 * Finds what room a client is in.
+	 * 
 	 * @param client The client
+	 * @return The room the client is in.
 	 */
-	public void clientDisconnected(Client client) {
-//		this.clients.remove(client);		
-		
-//		//Send to other clients that the client disconnected
-//		for (Client other : this.clients) {
-//			this.sendRemoveNeighbors(other, Collections.singletonList(client));
-//		}
-		
-		//Remove the client and distribute the changes
-		for (Changes changes : this.chatNetwork.removeClient(client.getId())) {
-			List<Client> toAdd = new ArrayList<>();
-			List<Client> toRemove = new ArrayList<>();
-			
-			for (Change change : changes.getChanges()) {
-				switch (change.getType()) {
-				case ADD:
-					toAdd.add(this.getClient(change.getClientId()));
-					break;
-				case REMOVE:
-					toRemove.add(this.getClient(change.getClientId()));
-					break;
-				default:
-					break;
-				}
-			}
-			
-			this.sendAddNeighbors(this.getClient(changes.getClientId()), toAdd);
-			this.sendRemoveNeighbors(this.getClient(changes.getClientId()), toRemove);
-		}
-		
-		this.clients.remove(client);	
-	}
-	
-	/**
-	 * Sends what neighbors to add for the given client
-	 * @param client The client
-	 * @param toAdd The clients to add
-	 */
-	private void sendAddNeighbors(Client client, List<Client> toAdd) {
-		try {
-			if (toAdd.size() > 0) {
-				client.getOutputStream().writeByte(MessageId.ADD_NEIGHBORS.getId());		
-				this.sendNeighborList(client, toAdd);				
-				client.getOutputStream().flush();
-			}
-		} catch (IOException e) {
-			System.err.println("Could not send addNeighbor " + e);
-		}
-	}
-	
-	/**
-	 * Sends what neighbors to remove for the given client
-	 * @param client The client
-	 * @param toRemove The clients to remove
-	 */
-	private void sendRemoveNeighbors(Client client, List<Client> toRemove) {
-		try {
-			if (toRemove.size() > 0) {
-				client.getOutputStream().writeByte(MessageId.REMOVE_NEIGHBORS.getId());		
-				
-				client.getOutputStream().writeInt(toRemove.size());
-				for (Client receiver : toRemove) {
-					client.getOutputStream().writeInt(receiver.getId());
-				}
-				
-				client.getOutputStream().flush();
-			}
-		} catch (IOException e) {
-			System.err.println("Could not send addNeighbor " + e);
-		}
-	}
-	
-	/**
-	 * Sends the given neighbor list to the given client.
-	 * Note that this method does not set the type of the message.
-	 * @param client The client
-	 * @param neighborList The neighbor list
-	 */
-	private void sendNeighborList(Client client, List<Client> neighborList) {
-		try {
-			client.getOutputStream().writeInt(neighborList.size());
-			
-			for (Client receiver : neighborList) {
-				client.getOutputStream().writeInt(receiver.getId());
-				client.getOutputStream().writeUTF(receiver.getIP());
-				client.getOutputStream().writeInt(receiver.getPort());
-			}
-		} catch (IOException e) {
-			System.err.println("Could not send neighbor list: " + e);
-		}
-	}
-	
-	/**
-	 * Returns all clients except the given
-	 * @param client The client
-	 */
-	private List<Client> getAllClients(Client client) {
-		List<Client> clients = new ArrayList<Client>();
-		
-		for (Client receiver : this.clients) {
-			if (receiver.getId() != client.getId()) {
-				clients.add(receiver);
+	private ChatRoom findRoom(Client client) {
+		for (ChatRoom room : chatRooms) {
+			if (room.inRoom(client)) {
+				return room;
 			}
 		}
 		
-		return clients;
+		return null;
 	}
 	
 	public static void main(String[] args) {
 		Server server = new Server(4711);
+		
+		server.addRoom();
+		server.addRoom();
+		server.addRoom();
+		
 		server.start();
 	}
 }

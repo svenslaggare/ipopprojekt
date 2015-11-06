@@ -73,10 +73,11 @@ public class Client implements Runnable {
 				byte messageID = this.streamIn.readByte();
 				
 				switch (MessageId.fromByte(messageID)) {
-				case SET_CLIENT_P2P_PORT:
+				case CONNECT_CLIENT:
 					{
 						this.port = this.streamIn.readInt();
-						this.server.clientConnected(this);
+						int room = this.streamIn.readInt();
+						this.server.clientConnected(this, room);
 					}
 					break;
 				default:
@@ -102,17 +103,21 @@ public class Client implements Runnable {
 	 * Closes the connection to the client
 	 * @throws IOException If an IO exception happens
 	 */
-	public void close() throws IOException {
-		if (this.socket != null) {
-			this.socket.close();
-		}
-		
-		if (this.streamOut != null) {
-			this.streamOut.close();
-		}
-		
-		if (this.streamOut != null) {
-			this.streamOut.close();
+	public void close() {
+		try {
+			if (this.socket != null) {
+				this.socket.close();
+			}
+			
+			if (this.streamOut != null) {
+				this.streamOut.close();
+			}
+			
+			if (this.streamOut != null) {
+				this.streamOut.close();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	

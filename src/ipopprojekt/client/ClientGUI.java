@@ -77,7 +77,7 @@ public class ClientGUI {
 					sendButton.removeActionListener(this);
 					frame.remove(roomsPanel);
 					
-					frame.setTitle("P2P Chat [" + chatRoom3.getText() + "] - " + name);
+					frame.setTitle("P2P Chat [Room " + chatRoom + "] - " + name);
 					
 					showChatClient();
 				}
