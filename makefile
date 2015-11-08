@@ -5,6 +5,7 @@ SOURCES += $(wildcard $(SRCDIR)/*/*/*.java)
 OUTDIR=bin
 
 build:
+	mkdir -p $(OUTDIR)
 	javac $(SOURCES) -d $(OUTDIR)
 
 run-server:
