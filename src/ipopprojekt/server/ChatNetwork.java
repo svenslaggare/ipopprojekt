@@ -1,6 +1,7 @@
 package ipopprojekt.server;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -296,7 +297,7 @@ public class ChatNetwork {
 		Set<Integer> clientList = new HashSet<>();
 		this.neighborList.put(clientId, clientList);
 		
-		Map<Integer, Changes> changes = new HashMap<>();
+		List<Changes> changes = new ArrayList<>();
 		
 		if (this.clients.size() > 1) {	
 			Set<Change> clientChanges = new HashSet<>();
@@ -308,7 +309,7 @@ public class ChatNetwork {
 				clientChanges.add(new Change(rand, ChangeType.ADD));
 			}
 			
-			changes.put(clientId, new Changes(clientId, clientChanges));
+			changes.add(new Changes(clientId, clientChanges));
 			
 			//Then add clients that has the new client as a neighbor
 			Set<Integer> added = new HashSet<>();
@@ -317,22 +318,11 @@ public class ChatNetwork {
 				added.add(rand);
 				this.neighborList.get(rand).add(clientId);
 				
-				Changes vertexChanges = null;
-				if (changes.containsKey(rand)) {
-					vertexChanges = changes.get(rand);
-				} else {
-					vertexChanges = new Changes(rand, new HashSet<>());
-					changes.put(rand, vertexChanges);
-				}
-				
-				vertexChanges.changes.add(new Change(clientId, ChangeType.ADD));
+				changes.add(new Changes(rand, Collections.singleton(new Change(clientId, ChangeType.ADD))));
 			}
-			
-			//Make sure that the network is connected
-			this.makeConnected(changes);
 		}
 				
-		return new ArrayList<>(changes.values());
+		return changes;
 	}
 	
 	/**
