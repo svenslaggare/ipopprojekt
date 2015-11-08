@@ -9,7 +9,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Random;
 
-import ipopproject.messages.MessageId;
+import ipopprojekt.messages.MessageId;
 
 /**
  * Represents a network client

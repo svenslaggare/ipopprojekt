@@ -7,7 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-import ipopproject.messages.MessageId;
+import ipopprojekt.messages.MessageId;
 
 /**
  * Represents a client for the central server

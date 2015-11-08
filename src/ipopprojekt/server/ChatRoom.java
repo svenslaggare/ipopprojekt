@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import ipopproject.messages.MessageId;
+import ipopprojekt.messages.MessageId;
 import ipopprojekt.server.ChatNetwork.Change;
 import ipopprojekt.server.ChatNetwork.Changes;
 

@@ -6,7 +6,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-import ipopproject.messages.MessageId;
+import ipopprojekt.messages.MessageId;
 
 /**
  * The central server that handles all connections

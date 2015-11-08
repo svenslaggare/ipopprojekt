@@ -1,4 +1,4 @@
-package ipopproject.messages;
+package ipopprojekt.messages;
 
 /**
  * The id of the messages
